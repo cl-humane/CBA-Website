@@ -2,48 +2,62 @@
 // Mounts all admin sub-routes under /api/v1/admin
 // All routes here require: authenticated + role === 'admin'
 
-import { Router }                     from "express";
-import multer                         from "multer";
-import path                           from "path";
-import fs                             from "fs";
+import { Router } from "express";
+import multer from "multer";
 import authenticate, { requireAdmin } from "../../middleware/auth.js";
-import bulkUpload                     from "./bulkUpload.js";
-import { supabaseAdmin }              from "../../config/supabase.js";
+import bulkUpload from "./bulkUpload.js";
+import { supabaseAdmin } from "../../config/supabase.js";
 
 const router = Router();
-const db     = supabaseAdmin; // service-role client, bypasses RLS
+const db = supabaseAdmin; // service-role client, bypasses RLS
 
 router.use(authenticate);
 router.use(requireAdmin);
 
 // ── Logo upload (multer — stores to /public/logos/) ────────────────────────────
-const logoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Store under server/public/logos — create folder if missing
-    const dir = path.resolve("public", "logos");
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext  = path.extname(file.originalname).toLowerCase();
-    const name = `company_${Date.now()}${ext}`;
-    cb(null, name);
+
+const logoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/png", "image/jpg", "image/jpeg", "image/webp", "image/svg+xml"];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Only image files allowed."));
   },
 });
 
-const logoUpload = multer({
-  storage: logoStorage,
-  limits:  { fileSize: 2 * 1024 * 1024 }, // 2 MB max
-  fileFilter: (_req, file, cb) => {
-    const allowed = [".png", ".jpg", ".jpeg", ".webp", ".svg"];
-    const ext     = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only PNG, JPG, WEBP, or SVG images are allowed for the company logo."));
-    }
-  },
-});
+const extractStoragePath = (publicUrl) => {
+  if (!publicUrl) return null;
+
+  // converts public URL back into storage path
+  const parts = publicUrl.split("/storage/v1/object/public/company-logo/");
+  return parts[1] || null;
+};
+
+const uploadLogo = async (file, companyId) => {
+  const ext = file.originalname.split(".").pop();
+  const fileName = `companies/${companyId}/logo-${Date.now()}.${ext}`;
+
+  // FIX: was "logos" — must match the actual Supabase bucket name "company-logo"
+  const { error } = await db.storage
+    .from("company-logo")
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false,
+    });
+
+  if (error) throw error;
+
+  const { data } = db.storage.from("company-logo").getPublicUrl(fileName);
+  return { url: data.publicUrl, path: fileName };
+};
+
+const deleteLogo = async (publicUrl) => {
+  const path = extractStoragePath(publicUrl);
+  if (!path) return;
+
+  await db.storage.from("company-logo").remove([path]);
+};
 
 // ── Bulk upload — must be before :id routes ────────────────────────────────────
 router.use("/employees/bulk", bulkUpload);
@@ -79,57 +93,134 @@ router.post("/companies", logoUpload.single("logo"), async (req, res) => {
     return res.status(400).json({ message: "Company name is required." });
   }
 
-  // Build logo URL if a file was uploaded
-  let logo_url = null;
-  if (req.file) {
-    // Serve from /logos/<filename>  — the caller must configure express.static("public")
-    logo_url = `/logos/${req.file.filename}`;
-  }
+  let uploadedLogo = null;
 
-  // 1. Insert company
-  const { data: company, error: companyErr } = await db
-    .from("companies")
-    .insert({ name: name.trim(), address, contact_name, contact_email, logo_url })
-    .select("id, name, logo_url")
-    .single();
-
-  if (companyErr) {
-    // Clean up uploaded file if company insert failed
-    if (req.file) fs.unlink(req.file.path, () => {});
-    if (companyErr.code === "23505") {
-      return res.status(409).json({ message: "A company with that name already exists." });
-    }
-    return res.status(500).json({ message: companyErr.message });
-  }
-
-  // 2. Optionally create the first evaluation period if dates were supplied
-  let period = null;
-  if (period_label && period_start_date && period_end_date && period_deadline_date) {
-    const { data: newPeriod, error: periodErr } = await db
-      .from("evaluation_periods")
+  try {
+    // 1. Create company FIRST (so we get ID for folder structure)
+    const { data: company, error: companyErr } = await db
+      .from("companies")
       .insert({
-        company_id:    company.id,
-        label:         period_label.trim(),
-        start_date:    period_start_date,
-        end_date:      period_end_date,
-        deadline_date: period_deadline_date,
-        is_active:     false, // admin activates manually later
+        name: name.trim(),
+        address,
+        contact_name,
+        contact_email,
+        logo_url: null,
       })
-      .select("id, label, start_date, end_date, deadline_date, is_active")
+      .select("id, name, logo_url")
       .single();
 
-    if (periodErr) {
-      console.warn("⚠️  Period creation failed:", periodErr.message);
-    } else {
-      period = newPeriod;
+    if (companyErr) {
+      return res.status(500).json({ message: companyErr.message });
     }
+
+    // 2. Upload logo (if exists)
+    if (req.file) {
+      uploadedLogo = await uploadLogo(req.file, company.id);
+
+      // update company with logo
+      const { error: updateErr } = await db
+        .from("companies")
+        .update({ logo_url: uploadedLogo.url })
+        .eq("id", company.id);
+
+      if (updateErr) {
+        await deleteLogo(uploadedLogo.url);
+        throw updateErr;
+      }
+
+      company.logo_url = uploadedLogo.url;
+    }
+
+    // 3. Evaluation period (unchanged)
+    let period = null;
+    if (period_label && period_start_date && period_end_date && period_deadline_date) {
+      const { data: newPeriod, error: periodErr } = await db
+        .from("evaluation_periods")
+        .insert({
+          company_id: company.id,
+          label: period_label.trim(),
+          start_date: period_start_date,
+          end_date: period_end_date,
+          deadline_date: period_deadline_date,
+          is_active: false,
+        })
+        .select("id, label, start_date, end_date, deadline_date, is_active")
+        .single();
+
+      if (!periodErr) period = newPeriod;
+    }
+
+    return res.status(201).json({
+      message: "Company created.",
+      company,
+      period: period ?? null,
+    });
+
+  } catch (err) {
+    // cleanup uploaded logo if anything fails
+    if (uploadedLogo?.url) {
+      await deleteLogo(uploadedLogo.url);
+    }
+
+    return res.status(500).json({
+      message: err.message || "Failed to create company",
+    });
+  }
+});
+
+router.put("/companies/:id/logo", logoUpload.single("logo"), async (req, res) => {
+  const { id } = req.params;
+
+  if (!req.file) {
+    return res.status(400).json({ message: "Logo file is required." });
   }
 
-  res.status(201).json({
-    message: "Company created.",
-    company,
-    period: period ?? null,
-  });
+  try {
+    // 1. Get existing company
+    const { data: company, error: fetchErr } = await db
+      .from("companies")
+      .select("id, logo_url")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr || !company) {
+      return res.status(404).json({ message: "Company not found." });
+    }
+
+    const uploadedLogo = await uploadLogo(req.file, id);
+    const newLogoUrl = uploadedLogo.url;
+    const uploadedPath = uploadedLogo.path;
+
+    // 3. Update DB first (safer rollback strategy)
+    const { error: updateErr } = await db
+      .from("companies")
+      .update({ logo_url: newLogoUrl })
+      .eq("id", id);
+
+    if (updateErr) {
+      // rollback: delete new upload
+      await db.storage.from("company-logo").remove([uploadedPath]);
+      return res.status(500).json({ message: updateErr.message });
+    }
+
+    // 4. Delete old logo AFTER successful DB update
+    if (company.logo_url) {
+      const oldPath = extractStoragePath(company.logo_url);
+      if (oldPath) {
+        await db.storage.from("company-logo").remove([oldPath]);
+      }
+    }
+
+    return res.json({
+      message: "Logo updated successfully.",
+      logo_url: newLogoUrl,
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message || "Failed to update logo",
+    });
+  }
 });
 
 // =============================================================================
@@ -166,11 +257,11 @@ router.post("/periods", async (req, res) => {
     .from("evaluation_periods")
     .insert({
       company_id,
-      label:         label.trim(),
+      label: label.trim(),
       start_date,
       end_date,
       deadline_date,
-      is_active:     false,
+      is_active: false,
     })
     .select("id, label, start_date, end_date, deadline_date, is_active")
     .single();
@@ -208,11 +299,11 @@ router.put("/periods/:id", async (req, res) => {
   }
 
   const updates = {};
-  if (label         !== undefined) updates.label         = label.trim();
-  if (start_date    !== undefined) updates.start_date    = start_date;
-  if (end_date      !== undefined) updates.end_date      = end_date;
+  if (label !== undefined) updates.label = label.trim();
+  if (start_date !== undefined) updates.start_date = start_date;
+  if (end_date !== undefined) updates.end_date = end_date;
   if (deadline_date !== undefined) updates.deadline_date = deadline_date;
-  if (is_active     !== undefined) updates.is_active     = is_active;
+  if (is_active !== undefined) updates.is_active = is_active;
 
   const { data, error } = await db
     .from("evaluation_periods")
@@ -317,14 +408,14 @@ router.get("/employees", async (req, res) => {
   }
 
   const employees = data.map(u => ({
-    id:               u.id,
-    full_name:        u.full_name,
-    email:            u.email,
-    role:             u.role,
-    is_active:        u.is_active,
-    department_name:  u.departments?.name ?? null,
-    code_status:      u.registration_codes?.at(-1)?.status ?? null,
-    relationships:    relMap[u.id] ? [...relMap[u.id]] : [],
+    id: u.id,
+    full_name: u.full_name,
+    email: u.email,
+    role: u.role,
+    is_active: u.is_active,
+    department_name: u.departments?.name ?? null,
+    code_status: u.registration_codes?.at(-1)?.status ?? null,
+    relationships: relMap[u.id] ? [...relMap[u.id]] : [],
     active_period_id: activePeriod?.id ?? null,
   }));
 
@@ -347,7 +438,7 @@ router.post("/employees", async (req, res) => {
   }
   if (!company_id) return res.status(400).json({ message: "company_id is required." });
 
-  const crypto                   = await import("crypto");
+  const crypto = await import("crypto");
   const { sendRegistrationCode } = await import("../../services/brevo.js");
 
   // 1. Create Supabase Auth user
@@ -361,14 +452,14 @@ router.post("/employees", async (req, res) => {
 
   // 2. Insert into public.users
   const { error: userErr } = await db.from("users").insert({
-    id:            userId,
+    id: userId,
     company_id,
     department_id: department_id || null,
     email,
-    last_name:     last_name.trim().toUpperCase(),
-    first_name:    first_name.trim().toUpperCase(),
-    middle_name:   middle_name?.trim().toUpperCase() || null,
-    full_name:     "",
+    last_name: last_name.trim().toUpperCase(),
+    first_name: first_name.trim().toUpperCase(),
+    middle_name: middle_name?.trim().toUpperCase() || null,
+    full_name: "",
     role,
   });
 
@@ -378,21 +469,21 @@ router.post("/employees", async (req, res) => {
   }
 
   // 3. Create registration code
-  const code    = crypto.default.randomBytes(4).toString("hex").toUpperCase();
+  const code = crypto.default.randomBytes(4).toString("hex").toUpperCase();
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   await db.from("registration_codes").insert({
-    company_id,    user_id: userId,        email,
-    last_name:     last_name.trim().toUpperCase(),
-    first_name:    first_name.trim().toUpperCase(),
-    middle_name:   middle_name?.trim().toUpperCase() || null,
-    full_name:     "",
-    role,          department_id: department_id || null,
-    code,          status: "pending",      expires_at: expires,
+    company_id, user_id: userId, email,
+    last_name: last_name.trim().toUpperCase(),
+    first_name: first_name.trim().toUpperCase(),
+    middle_name: middle_name?.trim().toUpperCase() || null,
+    full_name: "",
+    role, department_id: department_id || null,
+    code, status: "pending", expires_at: expires,
   });
 
   // 4. Send registration email
-  const mi       = middle_name?.trim() ? ` ${middle_name.trim()[0].toUpperCase()}.` : "";
+  const mi = middle_name?.trim() ? ` ${middle_name.trim()[0].toUpperCase()}.` : "";
   const fullName = `${last_name.trim().toUpperCase()}, ${first_name.trim().toUpperCase()}${mi}`;
   try {
     await sendRegistrationCode({ email, full_name: fullName, code });
@@ -422,7 +513,7 @@ router.post("/employees", async (req, res) => {
       const assignmentRows = [];
 
       for (const relType of chosenRels) {
-        const existing  = existingAssignments ?? [];
+        const existing = existingAssignments ?? [];
         const memberSet = new Set();
         for (const a of existing) {
           if (a.relationship === relType) {
@@ -434,10 +525,10 @@ router.post("/employees", async (req, res) => {
         const existingMembers = [...memberSet];
 
         for (const rateeId of existingMembers) {
-          assignmentRows.push({ period_id: activePeriod.id, rater_id: userId,    ratee_id: rateeId, relationship: relType });
+          assignmentRows.push({ period_id: activePeriod.id, rater_id: userId, ratee_id: rateeId, relationship: relType });
         }
         for (const raterId of existingMembers) {
-          assignmentRows.push({ period_id: activePeriod.id, rater_id: raterId,   ratee_id: userId,  relationship: relType });
+          assignmentRows.push({ period_id: activePeriod.id, rater_id: raterId, ratee_id: userId, relationship: relType });
         }
       }
 
@@ -456,8 +547,8 @@ router.post("/employees", async (req, res) => {
   }
 
   res.status(201).json({
-    message:             "Employee added and registration code sent.",
-    id:                  userId,
+    message: "Employee added and registration code sent.",
+    id: userId,
     assignments_created: assignmentsCreated,
   });
 });
@@ -465,7 +556,7 @@ router.post("/employees", async (req, res) => {
 // PUT /api/v1/admin/employees/:id/relationships
 // Body: { relationships: ['peer', 'subordinate', 'superior'], period_id: 'uuid' }
 router.put('/employees/:id/relationships', async (req, res) => {
-  const { id }                            = req.params;
+  const { id } = req.params;
   const { relationships = [], period_id } = req.body;
 
   if (!period_id) return res.status(400).json({ message: 'period_id is required.' });
@@ -501,8 +592,8 @@ router.put('/employees/:id/relationships', async (req, res) => {
     const existingMembers = [...memberSet];
 
     for (const otherId of existingMembers) {
-      assignmentRows.push({ period_id, rater_id: id,      ratee_id: otherId, relationship: relType });
-      assignmentRows.push({ period_id, rater_id: otherId, ratee_id: id,      relationship: relType });
+      assignmentRows.push({ period_id, rater_id: id, ratee_id: otherId, relationship: relType });
+      assignmentRows.push({ period_id, rater_id: otherId, ratee_id: id, relationship: relType });
     }
   }
 
@@ -528,8 +619,8 @@ router.put('/employees/:id/relationships', async (req, res) => {
   }
 
   res.json({
-    message:              'Relationships updated.',
-    assignments_created:  assignmentsCreated,
+    message: 'Relationships updated.',
+    assignments_created: assignmentsCreated,
     chosen_relationships: chosenRels,
   });
 });
@@ -553,24 +644,24 @@ router.post("/employees/:id/resend-code", async (req, res) => {
     return res.status(409).json({ message: "This employee has already registered." });
   }
 
-  const crypto                   = await import("crypto");
+  const crypto = await import("crypto");
   const { sendRegistrationCode } = await import("../../services/brevo.js");
 
-  const newCode   = crypto.default.randomBytes(4).toString("hex").toUpperCase();
+  const newCode = crypto.default.randomBytes(4).toString("hex").toUpperCase();
   const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   await db.from("registration_codes").update({
-    code:       newCode,
-    status:     "pending",
+    code: newCode,
+    status: "pending",
     expires_at: newExpiry,
-    used_at:    null,
+    used_at: null,
   }).eq("id", codeRow.id);
 
   try {
     await sendRegistrationCode({
-      email:     codeRow.email,
+      email: codeRow.email,
       full_name: codeRow.full_name,
-      code:      newCode,
+      code: newCode,
     });
     res.status(200).json({ message: "Registration code resent successfully." });
   } catch (mailErr) {
