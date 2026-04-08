@@ -1,0 +1,1457 @@
+/* client/src/assets/SurveyCatSubordinate.css */
+/* Renamed from survey2.css to match SurveyCatSubordinate.jsx — zero style changes */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+
+/*-------Header-------*/
+header {
+    width: auto;
+    left: 0;
+    top: 0;
+    padding: 1.5rem;
+    position: sticky;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-color: #ffffff;
+    z-index: 1000;
+}
+
+a {
+    color: #fff;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    display: flex;
+    align-items: right;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.navbar .logo {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .logo img {
+    width: auto;
+}
+
+.navbar .links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+    padding-top: 1rem;
+}
+
+.navbar .links a {
+    color: black;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.navbar .links a:hover {
+    color: #4285f4;
+}
+
+.toggle-btn {
+    width: 35px;
+    position: absolute;
+    right: 80px;
+    top: 40px;
+    display: none;
+}
+
+@media screen and (max-width: 708px) {
+    .navbar .links a {
+        color: black;
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+}
+
+@media screen and (max-width: 671px) {
+    .navbar .links a {
+        font-size: 1rem;
+        text-align: center;
+    }
+}
+
+@media screen and (max-width: 636px) {
+    .navbar .links a {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+}
+
+@media screen and (max-width: 599px) {
+    .navbar ul.links {
+        display: block;
+        text-align: end;
+    }
+}
+
+@media screen and (max-width: 466px) {
+    .navbar ul.links {
+        display: block;
+        text-align: start;
+    }
+}
+
+
+/*-------Content-------*/
+.container-fliud {
+    background-color: #F5F5F5;
+    flex: 1;
+}
+
+.container {
+    padding-top: 20px;
+    background-color: #F5F5F5;
+}
+
+
+/*-------Person Card-------*/
+.col-md {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 3%;
+}
+
+.card-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #2B6CA3;
+    border-radius: 10px;
+    max-width: 42vh;
+    padding: 1%;
+}
+
+.card-content img {
+    background-color: #FFFFFF;
+    box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    margin: 3%;
+}
+
+.card-content a {
+    margin: 3%;
+}
+
+.card-content h5 {
+    color: #FFFFFF;
+    font-size: 22px;
+}
+
+.card-content h6 {
+    color: #FFFFFF;
+    font-size: 16px;
+}
+
+/*-------Instruction-------*/
+.category-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-instruction {
+    width: 120vh;
+    background-color: #dfdfdf;
+    padding-top: .4%;
+    padding-bottom: .1%;
+    padding-left: 1%;
+    padding-right: 1%;
+    margin-bottom: 3%;
+    border-radius: 10px;
+    box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.2);
+}
+
+.category-instruction h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000000;
+    font-size: 17px;
+}
+
+.category-instruction h5 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: justify;
+    color: #000000;
+    font-size: 14px;
+}
+
+@media screen and (max-width: 360px) {
+    .category-instruction h3 {
+        font-size: 13px;
+    }
+
+    .category-instruction h5 {
+        font-size: 10px;
+    }
+
+    .card-content h5 {
+        color: #FFFFFF;
+        font-size: 18px;
+    }
+
+    .card-content h6 {
+        color: #FFFFFF;
+        font-size: 13px;
+    }
+}
+
+
+/*-------Rating Card-------*/
+.wrapper {
+    width: min(900px, 100% - 3rem);
+    margin-inline: auto;
+}
+
+.wrapper table {
+    background: #ffffff;
+    padding: 1rem;
+    border-collapse: collapse;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 2.5%;
+}
+
+.wrapper th,
+.wrapper td {
+    padding: .2rem;
+}
+
+.wrapper th {
+    border: 1px solid #b8b8b8;
+}
+
+.wrapper td {
+    border: 1px solid #b8b8b8;
+}
+
+.wrapper td:first-child, th:first-child {
+    border-left: none;
+    border-top: none;
+    border-bottom: none;
+}
+
+.wrapper td:last-child, th:last-child {
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+}
+
+.wrapper td, .wrapper th {
+    border-bottom: none;
+    border-top: none;
+}
+
+.wrapper tr:nth-child(odd) {
+    background-color: #dfdfdf;
+}
+
+@media (max-width: 650px) {
+    .wrapper table {
+        text-align: left;
+    }
+    .wrapper td {
+        display: grid;
+        grid-template-columns: 15ch auto;
+        padding: 0.5rem 1rem;
+        background-color: #dfdfdf;
+    }
+    .wrapper td, .wrapper th {
+        border-bottom: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
+    .wrapper th {
+        display: none;
+    }
+    .wrapper td::before {
+        content: attr(data-cell);
+        font-weight: bold;
+    }
+    .wrapper td:nth-child(even) {
+        padding-bottom: 1rem;
+        background-color: #ffffff;
+    }
+}
+
+@media (max-width: 500px) {
+    .wrapper table {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .wrapper {
+        max-width: 100%;
+        overflow-x: scroll;
+    }
+    .wrapper table {
+        width: 40vh;
+    }
+}
+
+
+/*-------Voting Card Radio 1-------*/
+.voting-table-radio .radio1 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 2-------*/
+.voting-table-radio .radio2 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input2 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input2:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 3-------*/
+.voting-table-radio .radio3 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input3 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input3:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 4-------*/
+.voting-table-radio .radio4 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input4 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input4:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 5-------*/
+.voting-table-radio .radio5 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input5 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input5:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 6-------*/
+.voting-table-radio .radio6 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input6 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input6:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 7-------*/
+.voting-table-radio .radio7 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input7 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input7:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 8-------*/
+.voting-table-radio .radio8 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input8 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input8:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 9-------*/
+.voting-table-radio .radio9 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input9 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input9:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 10-------*/
+.voting-table-radio .radio10 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input10 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input10:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 11-------*/
+.voting-table-radio .radio11 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input11 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input11:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 12-------*/
+.voting-table-radio .radio12 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input12 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input12:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 13-------*/
+.voting-table-radio .radio13 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input13 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input13:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 14-------*/
+.voting-table-radio .radio14 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input14 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input14:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 15-------*/
+.voting-table-radio .radio15 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input15 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input15:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 16-------*/
+.voting-table-radio .radio16 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input16 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input16:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 17-------*/
+.voting-table-radio .radio17 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input17 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input17:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 18-------*/
+.voting-table-radio .radio18 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input18 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input18:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 19-------*/
+.voting-table-radio .radio19 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input19 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input19:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 20-------*/
+.voting-table-radio .radio20 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input20 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input20:checked + span:after {
+    transform: scale(1);
+}
+
+/*-------Voting Card Radio 21-------*/
+.voting-table-radio .radio21 {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.voting-table-radio .radio__input21 {
+    display: none;
+}
+
+.voting-table-radio .radio__1,
+.radio__1_5, .radio__2, .radio__2_5,
+.radio__3, .radio__3_5, .radio__4,
+.radio__4_5, .radio__5, .radio__NA {
+    display: none;
+}
+
+.voting-table-radio span {
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid #8b8b8b;
+    border-radius: 50%;
+    box-sizing: border-box;
+    padding: 2px;
+    margin: 10px;
+}
+
+.voting-table-radio span:after {
+    content: "";
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #2B6CA3;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.5s;
+}
+
+.voting-table-radio .radio__input21:checked + span:after {
+    transform: scale(1);
+}
+
+
+/*-------Voting Card Table-------*/
+.voting-table-radio {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.voting-table-radio th,
+.voting-table-radio td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #dfdfdf;
+}
+
+.voting-table-radio tr th {
+    width: 53px;
+}
+
+.voting-table-radio tr th:first-child {
+    width: calc(100% - 540px);
+}
+
+@media (max-width: 600px) {
+    .voting-table-radio th {
+        display: none;
+    }
+    .voting-table-radio td {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        background-color: #dfdfdf;
+    }
+
+    .voting-table-radio .radio__1,
+    .radio__1_5, .radio__2, .radio__2_5,
+    .radio__3, .radio__3_5, .radio__4,
+    .radio__4_5, .radio__5, .radio__NA {
+        display: inline-flex;
+    }
+
+    .voting-table-radio td label {
+        display: inline-block;
+    }
+
+    .voting-table-radio td input[type="radio"] {
+        margin-right: 5px;
+    }
+
+    .voting-table-radio td:first-child {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 15px;
+    }
+}
+
+.table-container {
+    max-width: 140vh;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.table-container th {
+    background-color: #dfdfdf;
+}
+
+.span-rem {
+    display: none;
+}
+
+.table-container .q1,
+.table-container .q2,
+.table-container .q3,
+.table-container .q4,
+.table-container .q5,
+.table-container .q6,
+.table-container .q7,
+.table-container .q8,
+.table-container .q9,
+.table-container .q10,
+.table-container .q11,
+.table-container .q12,
+.table-container .q13,
+.table-container .q14,
+.table-container .q15,
+.table-container .q16,
+.table-container .q17,
+.table-container .q18,
+.table-container .q19,
+.table-container .q20,
+.table-container .q21 {
+    text-align: left;
+}
+
+@media (max-width: 895px) {
+    .table-container {
+        max-width: 100vh;
+        overflow-x: auto;
+    }
+}
+
+/*-------Buttons Prev and Next-------*/
+.buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 3%;
+}
+
+.buttons .prev {
+    font-size: 17px;
+    border-radius: 2px;
+    background-color: #2B6CA3;
+    color: #FFFFFF;
+    padding: 5px;
+    margin: .3%;
+    width: 100px;
+    border: solid;
+}
+
+.buttons .next {
+    font-size: 17px;
+    border-radius: 2px;
+    background-color: #2B6CA3;
+    color: #FFFFFF;
+    border: none;
+    padding: 5px;
+    margin: .3%;
+    width: 100px;
+    border: solid;
+}
+
+.buttons .prev:hover {
+    background-color: #ffffff;
+    color: #2B6CA3;
+    border: solid;
+    transition-duration: 0.5s;
+    cursor: pointer;
+}
+
+.buttons .next:hover {
+    background-color: #ffffff;
+    color: #2B6CA3;
+    border: solid;
+    transition-duration: 0.5s;
+    cursor: pointer;
+}
+
+/*-------Footer-------*/
+footer {
+    background-color: rgba(43, 108, 163);
+    color: #fff;
+    padding: 30px 5%;
+    text-align: center;
+}
+
+.footer-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.footer-col h4 {
+    position: relative;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 20px;
+    color: #ffffff;
+    text-transform: capitalize;
+}
+
+.footer-col p {
+    color: #fff;
+    max-width: 500px;
+    margin: 8px auto;
+    line-height: 20px;
+    font-size: 15px;
+}
+
+.footer-col h4::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    background-color: #dadada;
+    height: 2px;
+    width: 45px;
+}
+
+.icon-links a {
+    display: inline-block;
+    height: 50px;
+    width: 50px;
+    color: #ffffff;
+    background-color: rgba(43, 108, 163);
+    margin: 0 8px 8px 0;
+    text-align: center;
+    line-height: 50px;
+    border-radius: 50%;
+    transition: 0.4s;
+    font-size: 28px;
+}
+
+.footer-col h4::before {
+    all: unset;
+}
+
+@media (max-width: 500px) {
+    .footer-col {
+        width: 100%;
+    }
+}
+
+.rednote {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: justify;
+    color: #ff0000;
+    margin: 2%;
+}

@@ -1,0 +1,409 @@
+/* client/src/assets/RateNames.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+
+/* =============================================================
+   RESET & BASE
+   ============================================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: #fff;
+}
+
+/* =============================================================
+   HEADER / NAVBAR
+   ============================================================= */
+header {
+    width: 100%;
+    padding: 1.5rem;
+    position: sticky;
+    top: 0;
+    left: 0;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.navbar .logo {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .logo img {
+    width: auto;
+}
+
+.navbar .links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+    padding-top: 1rem;
+}
+
+.navbar .links a {
+    color: black;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.navbar .links a:hover {
+    color: #4285f4;
+}
+
+/* =============================================================
+   CONTENT WRAPPER
+   ============================================================= */
+.container-fliud {
+    background-color: #F5F5F5;
+    flex: 1;
+}
+
+/* =============================================================
+   FORM TITLE CARD
+   Consolidated — .part-card-super/subor/peer all share the same style
+   ============================================================= */
+.part-card-super,
+.part-card-subor,
+.part-card-peer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3%;
+}
+
+.part-card-super h5,
+.part-card-subor h5,
+.part-card-peer h5 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60vh;
+    background-color: #2B6CA3;
+    padding: 1%;
+    margin-bottom: 3%;
+    border-radius: 10px;
+    box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.2);
+    font-size: 20px;
+    color: #ffffff;
+}
+
+/* =============================================================
+   "WHO TO RATE" HINT LINK
+   ============================================================= */
+.container_whorate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3%;
+    padding: 0.5rem;
+}
+
+.whorate_card a {
+    text-decoration: none;
+    font-size: 17px;
+    text-align: justify;
+    color: #2B6CA3;
+    background-color: transparent;
+}
+
+.whorate_card a:visited { color: rgb(107, 153, 221); }
+.whorate_card a:hover   { color: rgb(107, 153, 221); text-decoration: underline; }
+.whorate_card a:active  { color: rgb(99, 197, 236);  text-decoration: underline; }
+
+/* =============================================================
+   FORM FIELD ROWS (Rater, Ratee, Date)
+   Consolidated — all card variants share the same layout
+   ============================================================= */
+.ratersuper_card,
+.rateesuper_card,
+.ratersubor_card,
+.rateesubor_card,
+.raterpeer_card,
+.rateepeer_card,
+.datesuper_card,
+.datesubor_card,
+.datepeer_card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3%;
+}
+
+/* Labels — aligned to the left edge of the input (400px wide) */
+.ratersuper_card label,
+.rateesuper_card label,
+.ratersubor_card label,
+.rateesubor_card label,
+.raterpeer_card label,
+.rateepeer_card label,
+.datesuper_card label,
+.datesubor_card label,
+.datepeer_card label {
+    width: 400px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* =============================================================
+   INPUTS & SELECTS
+   ============================================================= */
+input,
+select,
+.superdateeval,
+.subordateeval,
+.peerdateeval {
+    background-color: #ffffff;
+    color: #666;
+    padding: 0.5em;
+    border-radius: 10px;
+    border: solid 2px #dbdbdb;
+    outline: none;
+    font-weight: 500;
+    font-size: 16px;
+    font-family: "Poppins", sans-serif;
+    line-height: 1.4;
+    width: 400px;
+    transition: all 0.2s;
+}
+
+input:hover  { background-color: #eee; }
+select:hover { background-color: #eee; cursor: pointer; }
+
+input:focus,
+select:focus,
+.superdateeval:focus,
+.subordateeval:focus,
+.peerdateeval:focus {
+    color: #333;
+    background-color: #ffffff;
+    border-color: #2B6CA3;
+}
+
+input:focus  { cursor: text; }
+
+/* Date inputs — uppercase display */
+.superdateeval,
+.subordateeval,
+.peerdateeval {
+    text-transform: uppercase;
+}
+
+/* =============================================================
+   PREV / NEXT BUTTONS
+   ============================================================= */
+.buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 3%;
+    gap: 0.5rem;
+}
+
+.buttons .prev,
+.buttons .next {
+    font-size: 17px;
+    font-family: "Poppins", sans-serif;
+    border-radius: 2px;
+    background-color: #2B6CA3;
+    color: #ffffff;
+    padding: 5px;
+    width: 100px;
+    border: 2px solid #2B6CA3;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.buttons .prev:hover,
+.buttons .next:hover {
+    background-color: #ffffff;
+    color: #2B6CA3;
+}
+
+.buttons .next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================
+   FOOTER
+   ============================================================= */
+footer {
+    background-color: rgba(43, 108, 163);
+    color: #fff;
+    padding: 30px 5%;
+    text-align: center;
+}
+
+.footer-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.footer-col h4 {
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 20px;
+    color: #ffffff;
+    text-transform: capitalize;
+}
+
+.footer-col p {
+    color: #fff;
+    max-width: 500px;
+    margin: 8px auto;
+    line-height: 20px;
+    font-size: 15px;
+}
+
+.icon-links a {
+    display: inline-block;
+    height: 50px;
+    width: 50px;
+    color: #ffffff;
+    background-color: rgba(43, 108, 163);
+    margin: 0 8px 8px 0;
+    text-align: center;
+    line-height: 50px;
+    border-radius: 50%;
+    transition: 0.4s;
+    font-size: 28px;
+}
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
+@media screen and (max-width: 708px) {
+    .navbar .links a { font-size: 1.1rem; }
+}
+
+@media screen and (max-width: 636px) {
+    .navbar .links a { font-size: 0.9rem; }
+}
+
+@media screen and (max-width: 599px) {
+    .navbar ul.links { display: block; text-align: end; }
+}
+
+@media screen and (max-width: 466px) {
+    .navbar ul.links { display: block; text-align: start; }
+}
+
+@media screen and (max-width: 420px) {
+    input, select,
+    .superdateeval,
+    .subordateeval,
+    .peerdateeval { width: 300px; }
+
+    .ratersuper_card label,
+    .rateesuper_card label,
+    .ratersubor_card label,
+    .rateesubor_card label,
+    .raterpeer_card label,
+    .rateepeer_card label,
+    .datesuper_card label,
+    .datesubor_card label,
+    .datepeer_card label { width: 300px; font-size: 18px; }
+}
+
+@media screen and (max-width: 375px) {
+    input, select,
+    .superdateeval,
+    .subordateeval,
+    .peerdateeval { width: 250px; }
+
+    .ratersuper_card label,
+    .rateesuper_card label,
+    .ratersubor_card label,
+    .rateesubor_card label,
+    .raterpeer_card label,
+    .rateepeer_card label,
+    .datesuper_card label,
+    .datesubor_card label,
+    .datepeer_card label { width: 250px; font-size: 16px; }
+
+    .part-card-super h5,
+    .part-card-subor h5,
+    .part-card-peer h5 { font-size: 15px; }
+
+    .whorate_card a { font-size: 14px; }
+}
+
+@media screen and (max-width: 340px) {
+    input, select,
+    .superdateeval,
+    .subordateeval,
+    .peerdateeval { width: 250px; }
+
+    .ratersuper_card label,
+    .rateesuper_card label,
+    .ratersubor_card label,
+    .rateesubor_card label,
+    .raterpeer_card label,
+    .rateepeer_card label,
+    .datesuper_card label,
+    .datesubor_card label,
+    .datepeer_card label { width: 250px; font-size: 14px; }
+
+    .part-card-super h5,
+    .part-card-subor h5,
+    .part-card-peer h5 { font-size: 12px; }
+
+    .whorate_card a { font-size: 11px; }
+}
+
+@media screen and (max-width: 300px) {
+    input, select,
+    .superdateeval,
+    .subordateeval,
+    .peerdateeval { width: 230px; }
+
+    .ratersuper_card label,
+    .rateesuper_card label,
+    .ratersubor_card label,
+    .rateesubor_card label,
+    .raterpeer_card label,
+    .rateepeer_card label,
+    .datesuper_card label,
+    .datesubor_card label,
+    .datepeer_card label { width: 230px; font-size: 12px; }
+
+    .part-card-super h5,
+    .part-card-subor h5,
+    .part-card-peer h5 { font-size: 10px; }
+
+    .whorate_card a { font-size: 9px; }
+}
+
+@media screen and (max-width: 500px) {
+    .footer-col { width: 100%; }
+}

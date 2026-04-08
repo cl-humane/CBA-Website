@@ -1,0 +1,522 @@
+/* client/src/assets/Register.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #F5F5F5;
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────── */
+header {
+  width: 100%;
+  padding: 1.5rem;
+  position: sticky;
+  top: 0;
+  left: 0;
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navbar .logo {
+  display: flex;
+  align-items: center;
+}
+
+.navbar .logo img {
+  width: auto;
+  height: 40px;
+}
+
+.navbar .links {
+  display: flex;
+  list-style: none;
+  gap: 30px;
+  padding-top: 0.5rem;
+}
+
+.navbar .links a {
+  color: #232836;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.navbar .links a:hover {
+  color: rgba(43, 108, 163);
+}
+
+/* ── MAIN SECTION ──────────────────────────────────────────────────── */
+.register-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  background-color: #F5F5F5;
+}
+
+.register-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+}
+
+/* ── STEP INDICATOR ────────────────────────────────────────────────── */
+.reg-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 32px 0;
+  position: relative;
+  gap: 0;
+}
+
+.reg-steps__line {
+  position: absolute;
+  top: 42px;
+  left: calc(50% - 100px);
+  width: 200px;
+  height: 2px;
+  background: #e0e0e0;
+  z-index: 0;
+}
+
+.reg-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.reg-step__dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  border: 2px solid #e0e0e0;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.reg-step__label {
+  font-size: 11px;
+  color: #aaa;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.reg-step--active .reg-step__dot {
+  background: rgba(43, 108, 163);
+  border-color: rgba(43, 108, 163);
+  color: #fff;
+}
+
+.reg-step--active .reg-step__label {
+  color: rgba(43, 108, 163);
+  font-weight: 700;
+}
+
+.reg-step--done .reg-step__dot {
+  background: #43a047;
+  border-color: #43a047;
+  color: #fff;
+}
+
+.reg-step--done .reg-step__label {
+  color: #43a047;
+  font-weight: 600;
+}
+
+/* ── CARD BODY ─────────────────────────────────────────────────────── */
+.reg-body {
+  padding: 28px 32px 32px;
+}
+
+.reg-body--center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 32px;
+}
+
+.reg-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #232836;
+  margin: 16px 0 6px;
+}
+
+.reg-subtitle {
+  font-size: 13.5px;
+  color: #666;
+  margin-bottom: 22px;
+  line-height: 1.6;
+}
+
+/* ── FORM FIELDS ───────────────────────────────────────────────────── */
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.field.input-field {
+  position: relative;
+  height: 54px;
+  width: 100%;
+  margin-bottom: 14px;
+  border-radius: 8px;
+}
+
+.field.input-field input {
+  height: 100%;
+  width: 100%;
+  border: 1px solid #CACACA;
+  border-radius: 8px;
+  padding: 0 42px 0 15px;
+  font-size: 15px;
+  font-family: "Poppins", sans-serif;
+  outline: none;
+  color: #232836;
+  background: #fafafa;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.field.input-field input:focus {
+  border-color: rgba(43, 108, 163);
+  background: #fff;
+}
+
+.field.input-field input::placeholder {
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* Code input — monospace for better readability */
+.code-input {
+  font-family: 'Courier New', monospace !important;
+  font-size: 18px !important;
+  letter-spacing: 4px;
+  text-align: center;
+  font-weight: 700;
+  color: rgba(43, 108, 163) !important;
+}
+
+/* Password field eye icon */
+.eye-icon {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #8b8b8b;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.eye-icon:hover {
+  color: rgba(43, 108, 163);
+}
+
+/* Submit button */
+.field.button-field {
+  height: 50px;
+  width: 100%;
+  margin-top: 6px;
+  border-radius: 8px;
+}
+
+.field.button-field button {
+  height: 100%;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background-color: rgba(43, 108, 163);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.field.button-field button:hover:not(:disabled) {
+  background-color: #4285f4;
+}
+
+.field.button-field button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── ERROR MESSAGE ─────────────────────────────────────────────────── */
+.reg-error {
+  color: #e53935;
+  font-size: 13px;
+  background: #fff5f5;
+  border: 1px solid #ffcdd2;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* ── FOOTER LINK / BACK LINK ───────────────────────────────────────── */
+.reg-footer-link {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #666;
+}
+
+.reg-footer-link a {
+  color: rgba(43, 108, 163);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.reg-footer-link a:hover {
+  text-decoration: underline;
+}
+
+.reg-back-link {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(43, 108, 163);
+  font-size: 13px;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  margin-top: 12px;
+  text-align: center;
+  padding: 6px 0;
+  text-decoration: underline;
+}
+
+.reg-back-link:hover {
+  color: #4285f4;
+}
+
+/* ── WELCOME CARD (Step 2) ─────────────────────────────────────────── */
+.reg-welcome-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f0f4ff;
+  border: 1px solid #c5d8f5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.reg-welcome-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(43, 108, 163);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.reg-welcome-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #232836;
+  margin: 0 0 2px;
+}
+
+.reg-welcome-meta {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* ── PASSWORD STRENGTH ─────────────────────────────────────────────── */
+.pw-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px 0 10px;
+}
+
+.pw-strength__bars {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.pw-strength__bar {
+  height: 5px;
+  flex: 1;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+.pw-strength__label {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* ── SUCCESS STATE (Step 3) ────────────────────────────────────────── */
+.reg-success-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #43a047;
+  color: #fff;
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 16px rgba(67, 160, 71, 0.3);
+}
+
+.reg-spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #e0e0e0;
+  border-top-color: rgba(43, 108, 163);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-top: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── FOOTER ────────────────────────────────────────────────────────── */
+footer {
+  background-color: rgba(43, 108, 163);
+  color: #fff;
+  padding: 30px 5%;
+  text-align: center;
+  margin-top: auto;
+}
+
+.footer-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.footer-col h4 {
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.footer-col p {
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 500px;
+  margin: 6px auto;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.icon-links a {
+  display: inline-block;
+  height: 44px;
+  width: 44px;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+  margin: 8px 6px 0;
+  text-align: center;
+  line-height: 44px;
+  border-radius: 50%;
+  transition: background 0.3s;
+  font-size: 22px;
+}
+
+.icon-links a:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── RESPONSIVE ────────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .register-section {
+    padding: 24px 12px;
+  }
+
+  .register-card {
+    border-radius: 12px;
+  }
+
+  .reg-body {
+    padding: 20px 20px 28px;
+  }
+
+  .reg-steps {
+    padding: 20px 20px 0;
+  }
+
+  .reg-step__label {
+    font-size: 10px;
+  }
+
+  .reg-title {
+    font-size: 19px;
+  }
+}
+
+@media (max-width: 380px) {
+  .reg-step__label {
+    display: none;
+  }
+
+  .navbar .links a {
+    font-size: 0.85rem;
+  }
+
+  .footer-col {
+    width: 100%;
+  }
+}

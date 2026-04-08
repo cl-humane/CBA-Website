@@ -1,0 +1,264 @@
+/* client/src/assets/SurveyLetter.css */
+/* Renamed from survey_letter.css to match SurveyLetter.jsx — zero style changes */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+/*-------Header-------*/
+header {
+    width: auto;
+    left: 0;
+    top: 0;
+    padding: 1.5rem;
+    position: sticky;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-color: #ffffff;
+    z-index: 1000;
+}
+
+header a,
+footer a {
+    color: #fff;
+}
+
+.navbar .links a {
+    color: black;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+/* ✅ ADD — surveyletter text is always dark */
+.surveyletter {
+    width: 100vh;
+    color: #333333;   /* ← ADD THIS */
+    line-height: 1.8; /* ← ADD THIS for readability */
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+html, body {
+    height: 100%;
+}
+
+.navbar {
+    display: flex;
+    align-items: right;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.navbar .logo {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .logo img {
+    width: auto;
+}
+
+.navbar .links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+    padding-top: 1rem;
+}
+
+.navbar .links a {
+    color: black;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.navbar .links a:hover {
+    color: #4285f4;
+}
+
+.toggle-btn {
+    width: 35px;
+    position: absolute;
+    right: 80px;
+    top: 40px;
+    display: none;
+}
+
+@media screen and (max-width: 708px) {
+    .navbar .links a {
+        color: black;
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+}
+
+@media screen and (max-width: 671px) {
+    .navbar .links a {
+        font-size: 1rem;
+        text-align: center;
+    }
+}
+
+@media screen and (max-width: 636px) {
+    .navbar .links a {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+}
+
+@media screen and (max-width: 599px) {
+    .navbar ul.links {
+        display: block;
+        text-align: end;
+    }
+}
+
+@media screen and (max-width: 466px) {
+    .navbar ul.links {
+        display: block;
+        text-align: start;
+    }
+}
+
+/*-------Content-------*/
+.container-fliud {
+    background-color: #F5F5F5;
+    flex: 1;
+}
+
+.category-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 80px;
+    text-align: justify;
+    font-size: 20px;
+}
+
+.surveyletter {
+    width: 100vh;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 3%;
+}
+
+.buttons .return {
+    font-size: 17px;
+    border-radius: 2px;
+    background-color: #2B6CA3;
+    color: #FFFFFF;
+    padding: 5px;
+    margin: .3%;
+    width: 100px;
+    border: solid;
+}
+
+.buttons .next {
+    font-size: 17px;
+    border-radius: 2px;
+    background-color: #2B6CA3;
+    color: #FFFFFF;
+    border: none;
+    padding: 5px;
+    margin: .3%;
+    width: 100px;
+    border: solid;
+}
+
+.buttons .return:hover {
+    background-color: #ffffff;
+    color: #2B6CA3;
+    border: solid;
+    transition-duration: 0.5s;
+    cursor: pointer;
+}
+
+.buttons .next:hover {
+    background-color: #ffffff;
+    color: #2B6CA3;
+    border: solid;
+    transition-duration: 0.5s;
+    cursor: pointer;
+}
+
+/*-------Footer-------*/
+footer {
+    background-color: rgba(43, 108, 163);
+    color: #fff;
+    padding: 30px 5%;
+    text-align: center;
+}
+
+.footer-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.footer-col h4 {
+    position: relative;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 20px;
+    color: #ffffff;
+    text-transform: capitalize;
+}
+
+.footer-col p {
+    color: #fff;
+    max-width: 500px;
+    margin: 8px auto;
+    line-height: 20px;
+    font-size: 15px;
+}
+
+.footer-col h4::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    background-color: #dadada;
+    height: 2px;
+    width: 45px;
+}
+
+.icon-links a {
+    display: inline-block;
+    height: 50px;
+    width: 50px;
+    color: #ffffff;
+    background-color: rgba(43, 108, 163);
+    margin: 0 8px 8px 0;
+    text-align: center;
+    line-height: 50px;
+    border-radius: 50%;
+    transition: 0.4s;
+    font-size: 28px;
+}
+
+.footer-col h4::before {
+    all: unset;
+}
+
+@media (max-width: 500px) {
+    .footer-col {
+        width: 100%;
+    }
+}
