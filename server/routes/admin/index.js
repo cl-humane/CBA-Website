@@ -28,8 +28,6 @@ const logoUpload = multer({
 
 const extractStoragePath = (publicUrl) => {
   if (!publicUrl) return null;
-
-  // converts public URL back into storage path
   const parts = publicUrl.split("/storage/v1/object/public/company-logo/");
   return parts[1] || null;
 };
@@ -38,7 +36,6 @@ const uploadLogo = async (file, companyId) => {
   const ext = file.originalname.split(".").pop();
   const fileName = `companies/${companyId}/logo-${Date.now()}.${ext}`;
 
-  // FIX: was "logos" — must match the actual Supabase bucket name "company-logo"
   const { error } = await db.storage
     .from("company-logo")
     .upload(fileName, file.buffer, {
@@ -55,7 +52,6 @@ const uploadLogo = async (file, companyId) => {
 const deleteLogo = async (publicUrl) => {
   const path = extractStoragePath(publicUrl);
   if (!path) return;
-
   await db.storage.from("company-logo").remove([path]);
 };
 
@@ -79,10 +75,6 @@ router.get("/companies", async (req, res) => {
 
 // POST /api/v1/admin/companies
 // Accepts multipart/form-data so the logo file can be included.
-// Required field: name
-// Optional fields: address, contact_name, contact_email, logo (file)
-// Evaluation Period fields (all optional but used together):
-//   period_label, period_start_date, period_end_date, period_deadline_date
 router.post("/companies", logoUpload.single("logo"), async (req, res) => {
   const {
     name, address, contact_name, contact_email,
@@ -117,7 +109,6 @@ router.post("/companies", logoUpload.single("logo"), async (req, res) => {
     if (req.file) {
       uploadedLogo = await uploadLogo(req.file, company.id);
 
-      // update company with logo
       const { error: updateErr } = await db
         .from("companies")
         .update({ logo_url: uploadedLogo.url })
@@ -131,7 +122,7 @@ router.post("/companies", logoUpload.single("logo"), async (req, res) => {
       company.logo_url = uploadedLogo.url;
     }
 
-    // 3. Evaluation period (unchanged)
+    // 3. Evaluation period (optional)
     let period = null;
     if (period_label && period_start_date && period_end_date && period_deadline_date) {
       const { data: newPeriod, error: periodErr } = await db
@@ -157,17 +148,77 @@ router.post("/companies", logoUpload.single("logo"), async (req, res) => {
     });
 
   } catch (err) {
-    // cleanup uploaded logo if anything fails
     if (uploadedLogo?.url) {
       await deleteLogo(uploadedLogo.url);
     }
-
     return res.status(500).json({
       message: err.message || "Failed to create company",
     });
   }
 });
 
+// PUT /api/v1/admin/companies/:id
+// Accepts multipart/form-data (logo optional). Updates company details.
+router.put("/companies/:id", logoUpload.single("logo"), async (req, res) => {
+  const { id } = req.params;
+  const { name, address, contact_name, contact_email } = req.body;
+
+  if (!name?.trim()) {
+    return res.status(400).json({ message: "Company name is required." });
+  }
+
+  try {
+    // 1. Fetch existing company (need current logo_url for cleanup)
+    const { data: existing, error: fetchErr } = await db
+      .from("companies")
+      .select("id, logo_url")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr || !existing) {
+      return res.status(404).json({ message: "Company not found." });
+    }
+
+    const updates = {
+      name: name.trim(),
+      address: address ?? null,
+      contact_name: contact_name ?? null,
+      contact_email: contact_email ?? null,
+    };
+
+    // 2. Upload new logo if provided
+    let uploadedLogo = null;
+    if (req.file) {
+      uploadedLogo = await uploadLogo(req.file, id);
+      updates.logo_url = uploadedLogo.url;
+    }
+
+    // 3. Update DB
+    const { data: company, error: updateErr } = await db
+      .from("companies")
+      .update(updates)
+      .eq("id", id)
+      .select("id, name, address, contact_name, contact_email, logo_url, is_active")
+      .single();
+
+    if (updateErr) {
+      if (uploadedLogo?.url) await deleteLogo(uploadedLogo.url);
+      return res.status(500).json({ message: updateErr.message });
+    }
+
+    // 4. Delete old logo after successful DB update
+    if (req.file && existing.logo_url) {
+      await deleteLogo(existing.logo_url);
+    }
+
+    return res.json({ message: "Company updated.", company });
+
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Failed to update company." });
+  }
+});
+
+// PUT /api/v1/admin/companies/:id/logo
 router.put("/companies/:id/logo", logoUpload.single("logo"), async (req, res) => {
   const { id } = req.params;
 
@@ -176,7 +227,6 @@ router.put("/companies/:id/logo", logoUpload.single("logo"), async (req, res) =>
   }
 
   try {
-    // 1. Get existing company
     const { data: company, error: fetchErr } = await db
       .from("companies")
       .select("id, logo_url")
@@ -191,19 +241,16 @@ router.put("/companies/:id/logo", logoUpload.single("logo"), async (req, res) =>
     const newLogoUrl = uploadedLogo.url;
     const uploadedPath = uploadedLogo.path;
 
-    // 3. Update DB first (safer rollback strategy)
     const { error: updateErr } = await db
       .from("companies")
       .update({ logo_url: newLogoUrl })
       .eq("id", id);
 
     if (updateErr) {
-      // rollback: delete new upload
       await db.storage.from("company-logo").remove([uploadedPath]);
       return res.status(500).json({ message: updateErr.message });
     }
 
-    // 4. Delete old logo AFTER successful DB update
     if (company.logo_url) {
       const oldPath = extractStoragePath(company.logo_url);
       if (oldPath) {
@@ -243,7 +290,6 @@ router.get("/periods", async (req, res) => {
 });
 
 // POST /api/v1/admin/periods
-// Body: { company_id, label, start_date, end_date, deadline_date }
 router.post("/periods", async (req, res) => {
   const { company_id, label, start_date, end_date, deadline_date } = req.body;
 
@@ -271,14 +317,10 @@ router.post("/periods", async (req, res) => {
 });
 
 // PUT /api/v1/admin/periods/:id
-// Body: any subset of { label, start_date, end_date, deadline_date, is_active }
-// Activating a period (is_active: true) automatically deactivates all other periods
-// for the same company to ensure only one active period at a time.
 router.put("/periods/:id", async (req, res) => {
   const { id } = req.params;
   const { label, start_date, end_date, deadline_date, is_active } = req.body;
 
-  // Fetch the period so we know its company_id
   const { data: existing, error: fetchErr } = await db
     .from("evaluation_periods")
     .select("id, company_id, is_active")
@@ -289,7 +331,6 @@ router.put("/periods/:id", async (req, res) => {
     return res.status(404).json({ message: "Evaluation period not found." });
   }
 
-  // If activating, deactivate all others for the same company first
   if (is_active === true) {
     await db
       .from("evaluation_periods")
@@ -320,7 +361,6 @@ router.put("/periods/:id", async (req, res) => {
 router.delete("/periods/:id", async (req, res) => {
   const { id } = req.params;
 
-  // Safety check: disallow deleting an active period that has submissions
   const { count } = await db
     .from("submissions")
     .select("id", { count: "exact", head: true })
@@ -361,7 +401,6 @@ router.get("/departments", async (req, res) => {
 // =============================================================================
 
 // GET /api/v1/admin/employees?company_id=
-// Returns employees with their current relationship assignments in the active period.
 router.get("/employees", async (req, res) => {
   const { company_id } = req.query;
   if (!company_id) return res.status(400).json({ message: "company_id is required." });
@@ -378,7 +417,6 @@ router.get("/employees", async (req, res) => {
 
   if (error) return res.status(500).json({ message: error.message });
 
-  // Fetch the active period so we can load relationship assignments
   const { data: activePeriod } = await db
     .from("evaluation_periods")
     .select("id")
@@ -386,7 +424,6 @@ router.get("/employees", async (req, res) => {
     .eq("is_active", true)
     .maybeSingle();
 
-  // Build a map: userId → Set of relationship types (check both rater_id and ratee_id)
   let relMap = {};
   if (activePeriod) {
     const userIds = data.map(u => u.id);
@@ -423,8 +460,6 @@ router.get("/employees", async (req, res) => {
 });
 
 // POST /api/v1/admin/employees
-// Body: { last_name, first_name, middle_name, email, role, department_id, company_id,
-//         relationships: ["peer", "subordinate", "superior"] }
 router.post("/employees", async (req, res) => {
   const {
     last_name, first_name, middle_name,
@@ -441,7 +476,6 @@ router.post("/employees", async (req, res) => {
   const crypto = await import("crypto");
   const { sendRegistrationCode } = await import("../../services/brevo.js");
 
-  // 1. Create Supabase Auth user
   const tempPassword = crypto.default.randomBytes(16).toString("base64");
   const { data: authData, error: authErr } = await db.auth.admin.createUser({
     email, password: tempPassword, email_confirm: true,
@@ -450,7 +484,6 @@ router.post("/employees", async (req, res) => {
 
   const userId = authData.user.id;
 
-  // 2. Insert into public.users
   const { error: userErr } = await db.from("users").insert({
     id: userId,
     company_id,
@@ -468,7 +501,6 @@ router.post("/employees", async (req, res) => {
     return res.status(500).json({ message: userErr.message });
   }
 
-  // 3. Create registration code
   const code = crypto.default.randomBytes(4).toString("hex").toUpperCase();
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -482,7 +514,6 @@ router.post("/employees", async (req, res) => {
     code, status: "pending", expires_at: expires,
   });
 
-  // 4. Send registration email
   const mi = middle_name?.trim() ? ` ${middle_name.trim()[0].toUpperCase()}.` : "";
   const fullName = `${last_name.trim().toUpperCase()}, ${first_name.trim().toUpperCase()}${mi}`;
   try {
@@ -491,7 +522,6 @@ router.post("/employees", async (req, res) => {
     console.warn("Brevo email failed for", email, "—", mailErr.message);
   }
 
-  // 5. Create ratee_rater_assignments if relationships were provided
   let assignmentsCreated = 0;
   const validRelationships = ["peer", "subordinate", "superior"];
   const chosenRels = relationships.filter(r => validRelationships.includes(r));
@@ -554,7 +584,6 @@ router.post("/employees", async (req, res) => {
 });
 
 // PUT /api/v1/admin/employees/:id/relationships
-// Body: { relationships: ['peer', 'subordinate', 'superior'], period_id: 'uuid' }
 router.put('/employees/:id/relationships', async (req, res) => {
   const { id } = req.params;
   const { relationships = [], period_id } = req.body;
@@ -564,7 +593,6 @@ router.put('/employees/:id/relationships', async (req, res) => {
   const validRelationships = ['peer', 'subordinate', 'superior'];
   const chosenRels = relationships.filter(r => validRelationships.includes(r));
 
-  // Delete all existing assignments for this user in this period (both directions)
   await db.from('ratee_rater_assignments').delete().eq('period_id', period_id).eq('rater_id', id);
   await db.from('ratee_rater_assignments').delete().eq('period_id', period_id).eq('ratee_id', id);
 
@@ -572,7 +600,6 @@ router.put('/employees/:id/relationships', async (req, res) => {
     return res.json({ message: 'Relationships cleared.', assignments_created: 0, chosen_relationships: [] });
   }
 
-  // Fetch remaining assignments after deletion to find existing group members
   const { data: remainingAssignments } = await db
     .from('ratee_rater_assignments')
     .select('rater_id, ratee_id, relationship')

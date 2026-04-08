@@ -16,7 +16,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useSurveyStore from "../../store/surveyStore";
 import {
-  getCompanies, addCompany,
+  getCompanies, addCompany, updateCompany,
   getEmployees, getDepartments,
   addEmployee, resendCode, toggleActive, bulkUpload,
   updateRelationships,
@@ -131,7 +131,6 @@ function EditRelationshipsModal({ token, employee, periodId, onClose, onSaved })
               ⚠️ No active evaluation period detected. Activate a period first or assignments will not be created.
             </p>
           )}
-          {/* All toggle */}
           {(() => {
             const allSelected = VALID.every(r => selected.has(r));
             return (
@@ -147,11 +146,8 @@ function EditRelationshipsModal({ token, employee, periodId, onClose, onSaved })
                   type="checkbox"
                   checked={allSelected}
                   onChange={() => {
-                    if (allSelected) {
-                      setSelected(new Set());
-                    } else {
-                      setSelected(new Set(VALID));
-                    }
+                    if (allSelected) setSelected(new Set());
+                    else setSelected(new Set(VALID));
                   }}
                   style={{ accentColor: "#fff", width: "15px", height: "15px" }}
                 />
@@ -324,16 +320,13 @@ function AddCompanyModal({ token, onClose, onSaved }) {
     name: "", address: "", contact_name: "", contact_email: "",
   });
 
-  // Evaluation period — optional
   const [includePeriod, setIncludePeriod] = useState(false);
   const [period, setPeriod] = useState({
     label: "", start_date: "", end_date: "", deadline_date: "",
   });
 
-  // Logo file
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -360,7 +353,6 @@ function AddCompanyModal({ token, onClose, onSaved }) {
     setSaving(true);
     setError("");
 
-    // Build FormData so we can attach the logo file
     const fd = new FormData();
     fd.append("name", form.name.trim());
     fd.append("address", form.address);
@@ -526,6 +518,144 @@ function AddCompanyModal({ token, onClose, onSaved }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EDIT COMPANY MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function EditCompanyModal({ token, company, onClose, onSaved }) {
+  const logoInputRef = useRef();
+
+  const [form, setForm] = useState({
+    name:          company.name          ?? "",
+    address:       company.address       ?? "",
+    contact_name:  company.contact_name  ?? "",
+    contact_email: company.contact_email ?? "",
+  });
+
+  const [logoFile,    setLogoFile]    = useState(null);
+  const [logoPreview, setLogoPreview] = useState(company.logo_url ?? null);
+  const [error,  setError]  = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function setF(field, val) { setForm(f => ({ ...f, [field]: val })); }
+
+  function handleLogoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onload = ev => setLogoPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSubmit() {
+    if (!form.name.trim()) { setError("Company name is required."); return; }
+    setSaving(true);
+    setError("");
+
+    const fd = new FormData();
+    fd.append("name",          form.name.trim());
+    fd.append("address",       form.address);
+    fd.append("contact_name",  form.contact_name);
+    fd.append("contact_email", form.contact_email);
+    if (logoFile) fd.append("logo", logoFile);
+
+    try {
+      const result = await updateCompany(token, company.id, fd);
+      onSaved("Company updated successfully.", result.company);
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal" style={{ maxWidth: "540px" }}>
+        <div className="modal__header">
+          <h3 className="modal__title">Edit Company</h3>
+          <button className="modal__close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal__body" style={{ maxHeight: "72vh", overflowY: "auto" }}>
+
+          {/* ── Logo ── */}
+          <div className="form-field" style={{ marginBottom: "16px" }}>
+            <label className="form-field__label">
+              Company Logo <span style={{ fontWeight: 400, color: "#999" }}>(optional)</span>
+            </label>
+            <div
+              onClick={() => logoInputRef.current?.click()}
+              style={{
+                display: "flex", alignItems: "center", gap: "14px",
+                padding: "12px 14px",
+                border: "1.5px dashed #c0c0d0",
+                borderRadius: "8px",
+                background: "#fafafa",
+                cursor: "pointer",
+              }}
+            >
+              {logoPreview ? (
+                <img src={logoPreview} alt="Logo preview"
+                  style={{ width: "56px", height: "56px", objectFit: "contain", borderRadius: "6px", border: "1px solid #dde" }} />
+              ) : (
+                <div style={{
+                  width: "56px", height: "56px", borderRadius: "6px",
+                  background: "#e8eaf6", display: "flex", alignItems: "center",
+                  justifyContent: "center", fontSize: "24px",
+                }}>🏢</div>
+              )}
+              <div>
+                <div style={{ fontWeight: 600, fontSize: "13px", color: "#1a1a2e" }}>
+                  {logoFile ? logoFile.name : logoPreview ? "Click to replace logo" : "Click to upload logo"}
+                </div>
+                <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                  PNG, JPG, WEBP or SVG · Max 2 MB
+                </div>
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,.svg"
+                style={{ display: "none" }}
+                onChange={handleLogoChange}
+              />
+            </div>
+          </div>
+
+          {/* ── Details ── */}
+          <div className="form-field">
+            <label className="form-field__label">Company Name *</label>
+            <input className="form-field__input" placeholder="e.g. Premier Value Provider Inc."
+              value={form.name} onChange={e => setF("name", e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="form-field__label">Address</label>
+            <input className="form-field__input" placeholder="Office address"
+              value={form.address} onChange={e => setF("address", e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="form-field__label">Contact Person</label>
+            <input className="form-field__input" placeholder="Full name"
+              value={form.contact_name} onChange={e => setF("contact_name", e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label className="form-field__label">Contact Email</label>
+            <input className="form-field__input" type="email" placeholder="contact@company.com"
+              value={form.contact_email} onChange={e => setF("contact_email", e.target.value)} />
+          </div>
+
+          {error && <p className="form-error" style={{ marginTop: "10px" }}>{error}</p>}
+        </div>
+        <div className="modal__footer">
+          <button className="btn btn--secondary" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="btn btn--primary" onClick={handleSubmit} disabled={saving}>
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ADD EMPLOYEE MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 function AddEmployeeModal({ token, companyId, departments, onClose, onSaved }) {
@@ -619,7 +749,6 @@ function AddEmployeeModal({ token, companyId, departments, onClose, onSaved }) {
               {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
-          {/* Evaluation Types */}
           <div style={{ marginTop: "4px" }}>
             <label className="form-field__label" style={{ marginBottom: "6px", display: "block" }}>
               Evaluation Types <span style={{ fontWeight: 400, color: "#999" }}>(optional)</span>
@@ -810,7 +939,6 @@ function PeriodsPanel({ token, company, showToast, onPeriodChange }) {
 
   return (
     <div style={{ marginBottom: "28px" }}>
-      {/* Section header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "#1a1a2e" }}>Evaluation Periods</h2>
@@ -968,7 +1096,6 @@ function CompanyListView({ token, onSelectCompany, showToast }) {
         <div className="company-grid">
           {filtered.map(company => (
             <div key={company.id} className="company-card" onClick={() => onSelectCompany(company)}>
-              {/* Logo or default icon */}
               <div className="company-card__icon">
                 {company.logo_url ? (
                   <img src={company.logo_url} alt={company.name}
@@ -1012,6 +1139,8 @@ function EmployeeListView({ token, company, onBack, showToast }) {
   const [filterStatus, setFilterStatus] = useState("all");
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
+  const [showEditCompany, setShowEditCompany] = useState(false);
+  const [currentCompany, setCurrentCompany] = useState(company);
   const [resending, setResending] = useState(null);
   const [toggling, setToggling] = useState(null);
   const [editRelEmp, setEditRelEmp] = useState(null);
@@ -1020,8 +1149,8 @@ function EmployeeListView({ token, company, onBack, showToast }) {
     setLoading(true);
     try {
       const [empData, deptData] = await Promise.all([
-        getEmployees(token, company.id),
-        getDepartments(token, company.id),
+        getEmployees(token, currentCompany.id),
+        getDepartments(token, currentCompany.id),
       ]);
       setEmployees(empData.employees ?? []);
       setActivePeriodId(empData.active_period_id ?? null);
@@ -1033,7 +1162,7 @@ function EmployeeListView({ token, company, onBack, showToast }) {
     }
   }
 
-  useEffect(() => { fetchData(); }, [company.id]);
+  useEffect(() => { fetchData(); }, [currentCompany.id]);
 
   async function handleResend(emp) {
     setResending(emp.id);
@@ -1081,9 +1210,28 @@ function EmployeeListView({ token, company, onBack, showToast }) {
           <div className="breadcrumb">
             <button className="breadcrumb__link" onClick={onBack}>Employee Management</button>
             <span className="breadcrumb__sep">›</span>
-            <span className="breadcrumb__current">{company.name}</span>
+            <span className="breadcrumb__current">{currentCompany.name}</span>
           </div>
-          <h1 className="page-header__title">{company.name}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {currentCompany.logo_url ? (
+              <img
+                src={currentCompany.logo_url}
+                alt={currentCompany.name}
+                style={{ width: "36px", height: "36px", objectFit: "contain", borderRadius: "6px", border: "1px solid #e0e0e0" }}
+              />
+            ) : (
+              <div style={{
+                width: "36px", height: "36px", borderRadius: "6px",
+                background: "#e8eaf6", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: "20px", flexShrink: 0,
+              }}>🏢</div>
+            )}
+            <h1 className="page-header__title" style={{ margin: 0 }}>{currentCompany.name}</h1>
+            <button className="btn btn--secondary" style={{ fontSize: "12px", padding: "5px 12px" }}
+              onClick={() => setShowEditCompany(true)}>
+              Edit Company
+            </button>
+          </div>
           <p className="page-header__subtitle">
             Managing employees · {employees.length} total
             {!activePeriodId && (
@@ -1093,18 +1241,19 @@ function EmployeeListView({ token, company, onBack, showToast }) {
             )}
           </p>
         </div>
-        <div className="page-header__actions">
-          <button className="btn btn--secondary" onClick={() => setShowBulk(true)}>⬆ Bulk Upload</button>
-          <button className="btn btn--primary" onClick={() => setShowAdd(true)}>+ Add Employee</button>
-        </div>
+        <div className="page-header__actions" />
       </div>
 
       {/* ── Periods panel ── */}
-      <PeriodsPanel token={token} company={company} showToast={showToast} onPeriodChange={fetchData} />
+      <PeriodsPanel token={token} company={currentCompany} showToast={showToast} onPeriodChange={fetchData} />
 
       {/* ── Employee table ── */}
-      <div style={{ borderTop: "1px solid #e8eaf0", paddingTop: "20px", marginBottom: "12px" }}>
-        <h2 style={{ margin: "0 0 12px", fontSize: "17px", fontWeight: 700, color: "#1a1a2e" }}>Employees</h2>
+      <div style={{ borderTop: "1px solid #e8eaf0", paddingTop: "20px", marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "#1a1a2e" }}>Employees</h2>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button className="btn btn--secondary" style={{ fontSize: "13px", padding: "7px 16px" }} onClick={() => setShowBulk(true)}>⬆ Bulk Upload</button>
+          <button className="btn btn--primary" style={{ fontSize: "13px", padding: "7px 16px" }} onClick={() => setShowAdd(true)}>+ Add Employee</button>
+        </div>
       </div>
 
       <div className="filter-row">
@@ -1190,7 +1339,7 @@ function EmployeeListView({ token, company, onBack, showToast }) {
       {/* Modals */}
       {showAdd && (
         <AddEmployeeModal
-          token={token} companyId={company.id} departments={departments}
+          token={token} companyId={currentCompany.id} departments={departments}
           onClose={() => setShowAdd(false)}
           onSaved={(msg) => { setShowAdd(false); showToast(msg); fetchData(); }}
         />
@@ -1212,6 +1361,18 @@ function EmployeeListView({ token, company, onBack, showToast }) {
             ));
             setEditRelEmp(null);
             showToast(msg);
+          }}
+        />
+      )}
+      {showEditCompany && (
+        <EditCompanyModal
+          token={token}
+          company={currentCompany}
+          onClose={() => setShowEditCompany(false)}
+          onSaved={(msg, updatedCompany) => {
+            setShowEditCompany(false);
+            showToast(msg);
+            if (updatedCompany) setCurrentCompany(updatedCompany);
           }}
         />
       )}

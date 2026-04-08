@@ -16,15 +16,26 @@ async function apiFetch(token, path, options = {}) {
 }
 
 // ── Companies ──────────────────────────────────────────────────────────────────
-export const getCompanies = (token)          => apiFetch(token, "/admin/companies");
+export const getCompanies = (token) => apiFetch(token, "/admin/companies");
 
-// addCompany now accepts FormData (for logo upload) instead of plain JSON.
-// The caller is responsible for building the FormData object.
+// addCompany accepts FormData (for logo upload) instead of plain JSON.
 export async function addCompany(token, formData) {
   const res = await fetch(`${API_URL}/api/v1/admin/companies`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body: formData,   // FormData — browser sets Content-Type + boundary automatically
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) throw Object.assign(new Error(data.message ?? "Request failed"), { status: res.status });
+  return data;
+}
+
+// updateCompany accepts FormData (logo replacement is optional).
+export async function updateCompany(token, id, formData) {
+  const res = await fetch(`${API_URL}/api/v1/admin/companies/${id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
   });
   const data = await res.json();
   if (!res.ok) throw Object.assign(new Error(data.message ?? "Request failed"), { status: res.status });
@@ -32,10 +43,10 @@ export async function addCompany(token, formData) {
 }
 
 // ── Evaluation Periods (scoped to a company) ──────────────────────────────────
-export const getPeriods   = (token, companyId) => apiFetch(token, `/admin/periods?company_id=${companyId}`);
-export const addPeriod    = (token, payload)   => apiFetch(token, "/admin/periods", { method: "POST", body: JSON.stringify(payload) });
-export const updatePeriod = (token, id, payload) => apiFetch(token, `/admin/periods/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-export const deletePeriod = (token, id)        => apiFetch(token, `/admin/periods/${id}`, { method: "DELETE" });
+export const getPeriods   = (token, companyId)     => apiFetch(token, `/admin/periods?company_id=${companyId}`);
+export const addPeriod    = (token, payload)        => apiFetch(token, "/admin/periods", { method: "POST", body: JSON.stringify(payload) });
+export const updatePeriod = (token, id, payload)   => apiFetch(token, `/admin/periods/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+export const deletePeriod = (token, id)             => apiFetch(token, `/admin/periods/${id}`, { method: "DELETE" });
 
 // ── Employees (scoped to a company) ───────────────────────────────────────────
 export const getEmployees   = (token, companyId) => apiFetch(token, `/admin/employees?company_id=${companyId}`);
