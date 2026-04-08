@@ -42,11 +42,23 @@ export async function updateCompany(token, id, formData) {
   return data;
 }
 
+export const deleteCompany = (token, id, adminEmail) => 
+  apiFetch(token, `/admin/companies/${id}`, { 
+    method: "DELETE",
+    body: JSON.stringify({ admin_email: adminEmail })
+  });
+
 // ── Evaluation Periods (scoped to a company) ──────────────────────────────────
 export const getPeriods   = (token, companyId)     => apiFetch(token, `/admin/periods?company_id=${companyId}`);
 export const addPeriod    = (token, payload)        => apiFetch(token, "/admin/periods", { method: "POST", body: JSON.stringify(payload) });
 export const updatePeriod = (token, id, payload)   => apiFetch(token, `/admin/periods/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-export const deletePeriod = (token, id)             => apiFetch(token, `/admin/periods/${id}`, { method: "DELETE" });
+export const deletePeriod = (token, id, adminEmail) =>
+  apiFetch(token, `/admin/periods/${id}`, {
+    method: "DELETE",
+    body: JSON.stringify({ admin_email: adminEmail }),
+  });
+export const getPeriodSubmissionCount = (token, periodId) =>
+  apiFetch(token, `/admin/periods/${periodId}/submission-count`);
 
 // ── Employees (scoped to a company) ───────────────────────────────────────────
 export const getEmployees   = (token, companyId) => apiFetch(token, `/admin/employees?company_id=${companyId}`);

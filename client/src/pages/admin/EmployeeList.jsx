@@ -16,11 +16,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useSurveyStore from "../../store/surveyStore";
 import {
-  getCompanies, addCompany, updateCompany,
+  getCompanies, addCompany, updateCompany, deleteCompany,
   getEmployees, getDepartments,
   addEmployee, resendCode, toggleActive, bulkUpload,
   updateRelationships,
-  getPeriods, addPeriod, updatePeriod, deletePeriod,
+  getPeriods, addPeriod, updatePeriod, deletePeriod, getPeriodSubmissionCount, // ✅ Added getPeriodSubmissionCount
 } from "../../api/admin";
 import "../../assets/admin/EmployeeList.css";
 
@@ -304,6 +304,159 @@ function PeriodModal({ token, companyId, existing, onClose, onSaved }) {
           <button className="btn btn--primary" onClick={handleSubmit} disabled={saving}>
             {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Period"}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE PERIOD CONFIRMATION MODAL ✅ NEW
+// ─────────────────────────────────────────────────────────────────────────────
+function DeletePeriodModal({ token, period, adminEmail, onClose, onDeleted }) {
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [submissionCount, setSubmissionCount] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    async function checkSubmissions() {
+      try {
+        const data = await getPeriodSubmissionCount(token, period.id);
+        setSubmissionCount(data.submission_count ?? 0);
+      } catch (err) {
+        setError("Failed to check submissions: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkSubmissions();
+  }, [period.id, token]);
+
+  async function handleDelete() {
+    if (!confirmEmail.trim()) {
+      setError("Please enter your email to confirm.");
+      return;
+    }
+
+    if (confirmEmail.toLowerCase() !== adminEmail.toLowerCase()) {
+      setError("Email does not match your admin account.");
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      await deletePeriod(token, period.id, confirmEmail);
+      onDeleted(`Period "${period.label}" deleted successfully.`);
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+    }
+  }
+
+  const canDelete = !period.is_active && submissionCount === 0;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal" style={{ maxWidth: "480px" }}>
+        <div className="modal__header" style={{ background: "#FFF3E0", borderBottom: "1px solid #FFB74D" }}>
+          <h3 className="modal__title" style={{ color: "#E65100" }}>⚠️ Delete Evaluation Period</h3>
+          <button className="modal__close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal__body">
+          {loading ? (
+            <p style={{ fontSize: "14px", color: "#666", textAlign: "center", padding: "20px 0" }}>
+              Checking submissions...
+            </p>
+          ) : (
+            <>
+              <p style={{ fontSize: "14px", color: "#333", marginBottom: "12px", lineHeight: 1.6 }}>
+                You are about to <b>permanently delete</b>:
+              </p>
+              <div style={{
+                padding: "12px 14px",
+                background: "#FFF3E0",
+                border: "1px solid #FFB74D",
+                borderRadius: "8px",
+                marginBottom: "16px"
+              }}>
+                <div style={{ fontWeight: 700, fontSize: "15px", color: "#1a1a2e", marginBottom: "4px" }}>
+                  {period.label}
+                </div>
+                <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                  {period.start_date} → {period.end_date} · Deadline: {period.deadline_date}
+                </div>
+                {period.is_active && (
+                  <div style={{ fontSize: "12px", color: "#E65100", marginTop: "6px", fontWeight: 600 }}>
+                    ⚠️ This period is currently ACTIVE
+                  </div>
+                )}
+                {submissionCount > 0 && (
+                  <div style={{ fontSize: "12px", color: "#E65100", marginTop: "6px", fontWeight: 600 }}>
+                    ⚠️ {submissionCount} submission(s) exist for this period
+                  </div>
+                )}
+              </div>
+
+              {!canDelete ? (
+                <div style={{
+                  padding: "12px 14px",
+                  background: "#FFEBEE",
+                  border: "1px solid #EF5350",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  color: "#C62828",
+                  lineHeight: 1.5
+                }}>
+                  <b>⛔ Cannot delete this period.</b><br />
+                  {period.is_active && "• Deactivate the period first.\n"}
+                  {submissionCount > 0 && `• Period has ${submissionCount} submission(s). Submissions cannot be deleted.`}
+                </div>
+              ) : (
+                <>
+                  <p style={{ fontSize: "13px", color: "#666", marginBottom: "12px", lineHeight: 1.5 }}>
+                    This action <b>cannot be undone</b>. All period data and assignments will be permanently removed.
+                  </p>
+                  <div className="form-field">
+                    <label className="form-field__label" style={{ color: "#E65100" }}>
+                      Type your admin email to confirm:
+                    </label>
+                    <input
+                      className="form-field__input"
+                      type="email"
+                      placeholder={adminEmail}
+                      value={confirmEmail}
+                      onChange={e => { setConfirmEmail(e.target.value); setError(""); }}
+                      autoFocus
+                    />
+                  </div>
+                  {error && <p className="form-error">{error}</p>}
+                </>
+              )}
+            </>
+          )}
+        </div>
+        <div className="modal__footer">
+          <button className="btn btn--secondary" onClick={onClose} disabled={deleting}>
+            Cancel
+          </button>
+          {canDelete && !loading && (
+            <button
+              className="btn"
+              style={{
+                background: "#C62828",
+                color: "#fff",
+                fontWeight: 700
+              }}
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete Permanently"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -656,6 +809,129 @@ function EditCompanyModal({ token, company, onClose, onSaved }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DELETE COMPANY CONFIRMATION MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function DeleteCompanyModal({ token, company, adminEmail, onClose, onDeleted }) {
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!confirmEmail.trim()) {
+      setError("Please enter your email to confirm.");
+      return;
+    }
+
+    if (confirmEmail.toLowerCase() !== adminEmail.toLowerCase()) {
+      setError("Email does not match your admin account.");
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      await deleteCompany(token, company.id, confirmEmail);
+      onDeleted(`Company "${company.name}" deleted successfully.`);
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal" style={{ maxWidth: "480px" }}>
+        <div className="modal__header" style={{ background: "#FFF3E0", borderBottom: "1px solid #FFB74D" }}>
+          <h3 className="modal__title" style={{ color: "#E65100" }}>⚠️ Delete Company</h3>
+          <button className="modal__close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal__body">
+          <p style={{ fontSize: "14px", color: "#333", marginBottom: "12px", lineHeight: 1.6 }}>
+            You are about to <b>permanently delete</b>:
+          </p>
+          <div style={{
+            padding: "12px 14px",
+            background: "#FFF3E0",
+            border: "1px solid #FFB74D",
+            borderRadius: "8px",
+            marginBottom: "16px"
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "15px", color: "#1a1a2e", marginBottom: "4px" }}>
+              {company.name}
+            </div>
+            {company.employee_count > 0 && (
+              <div style={{ fontSize: "12px", color: "#E65100", marginTop: "4px" }}>
+                ⚠️ {company.employee_count} employee(s) found
+              </div>
+            )}
+            {company.period_count > 0 && (
+              <div style={{ fontSize: "12px", color: "#E65100", marginTop: "4px" }}>
+                ⚠️ {company.period_count} evaluation period(s) found
+              </div>
+            )}
+          </div>
+
+          {(company.employee_count > 0 || company.period_count > 0) ? (
+            <div style={{
+              padding: "12px 14px",
+              background: "#FFEBEE",
+              border: "1px solid #EF5350",
+              borderRadius: "8px",
+              fontSize: "13px",
+              color: "#C62828",
+              lineHeight: 1.5
+            }}>
+              <b>⛔ Cannot delete this company.</b><br />
+              Remove all employees and evaluation periods first.
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: "13px", color: "#666", marginBottom: "12px", lineHeight: 1.5 }}>
+                This action <b>cannot be undone</b>. All company data will be permanently removed.
+              </p>
+              <div className="form-field">
+                <label className="form-field__label" style={{ color: "#E65100" }}>
+                  Type your admin email to confirm:
+                </label>
+                <input
+                  className="form-field__input"
+                  type="email"
+                  placeholder={adminEmail}
+                  value={confirmEmail}
+                  onChange={e => { setConfirmEmail(e.target.value); setError(""); }}
+                  autoFocus
+                />
+              </div>
+              {error && <p className="form-error">{error}</p>}
+            </>
+          )}
+        </div>
+        <div className="modal__footer">
+          <button className="btn btn--secondary" onClick={onClose} disabled={deleting}>
+            Cancel
+          </button>
+          {company.employee_count === 0 && company.period_count === 0 && (
+            <button
+              className="btn"
+              style={{
+                background: "#C62828",
+                color: "#fff",
+                fontWeight: 700
+              }}
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete Permanently"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ADD EMPLOYEE MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 function AddEmployeeModal({ token, companyId, departments, onClose, onSaved }) {
@@ -899,43 +1175,12 @@ function BulkUploadModal({ token, onClose, onSaved }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PERIODS PANEL  (inline inside company view — no separate page needed)
+// PERIODS PANEL (inline inside company view — no separate page needed)
 // ─────────────────────────────────────────────────────────────────────────────
-function PeriodsPanel({ token, company, showToast, onPeriodChange }) {
-  const [periods, setPeriods] = useState([]);
-  const [loading, setLoading] = useState(true);
+function PeriodsPanel({ token, company, periods, loading, rater, showToast, onPeriodChange }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editPeriod, setEditPeriod] = useState(null);
-  const [deleting, setDeleting] = useState(null);
-
-  async function fetchPeriods() {
-    setLoading(true);
-    try {
-      const data = await getPeriods(token, company.id);
-      setPeriods(data.periods ?? []);
-    } catch (err) {
-      showToast("Failed to load periods: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { fetchPeriods(); }, [company.id]);
-
-  async function handleDelete(period) {
-    if (!window.confirm(`Delete period "${period.label}"? This cannot be undone.`)) return;
-    setDeleting(period.id);
-    try {
-      await deletePeriod(token, period.id);
-      showToast("Period deleted.");
-      fetchPeriods();
-      onPeriodChange?.();
-    } catch (err) {
-      showToast(err.message);
-    } finally {
-      setDeleting(null);
-    }
-  }
+  const [deletePeriod, setDeletePeriod] = useState(null); // ✅ CHANGED: now stores period object
 
   return (
     <div style={{ marginBottom: "28px" }}>
@@ -990,13 +1235,11 @@ function PeriodsPanel({ token, company, showToast, onPeriodChange }) {
                   <button
                     className="action-btn"
                     style={{ color: "#2E7D32", borderColor: "#A5D6A7", fontWeight: 700 }}
-                    disabled={deleting === p.id}
                     title="Set this as the active period"
                     onClick={async () => {
                       try {
                         await updatePeriod(token, p.id, { is_active: true });
                         showToast(`"${p.label}" is now the active period.`);
-                        fetchPeriods();
                         onPeriodChange?.();
                       } catch (err) {
                         showToast("Failed to activate: " + err.message);
@@ -1007,11 +1250,9 @@ function PeriodsPanel({ token, company, showToast, onPeriodChange }) {
                 <button className="action-btn" onClick={() => setEditPeriod(p)}>Edit</button>
                 <button
                   className="action-btn action-btn--danger"
-                  disabled={p.is_active || deleting === p.id}
-                  title={p.is_active ? "Cannot delete an active period" : "Delete period"}
-                  onClick={() => handleDelete(p)}
+                  onClick={() => setDeletePeriod(p)} // ✅ CHANGED: pass whole period object
                 >
-                  {deleting === p.id ? "…" : "Delete"}
+                  Delete
                 </button>
               </div>
             </div>
@@ -1025,7 +1266,7 @@ function PeriodsPanel({ token, company, showToast, onPeriodChange }) {
           companyId={company.id}
           existing={null}
           onClose={() => setShowAdd(false)}
-          onSaved={(msg) => { setShowAdd(false); showToast(msg); fetchPeriods(); onPeriodChange?.(); }}
+          onSaved={(msg) => { setShowAdd(false); showToast(msg); onPeriodChange?.(); }}
         />
       )}
       {editPeriod && (
@@ -1034,7 +1275,21 @@ function PeriodsPanel({ token, company, showToast, onPeriodChange }) {
           companyId={company.id}
           existing={editPeriod}
           onClose={() => setEditPeriod(null)}
-          onSaved={(msg) => { setEditPeriod(null); showToast(msg); fetchPeriods(); onPeriodChange?.(); }}
+          onSaved={(msg) => { setEditPeriod(null); showToast(msg); onPeriodChange?.(); }}
+        />
+      )}
+      {/* ✅ NEW: Delete Period Modal with email confirmation */}
+      {deletePeriod && (
+        <DeletePeriodModal
+          token={token}
+          period={deletePeriod}
+          adminEmail={rater?.email}
+          onClose={() => setDeletePeriod(null)}
+          onDeleted={(msg) => {
+            setDeletePeriod(null);
+            showToast(msg);
+            onPeriodChange?.();
+          }}
         />
       )}
     </div>
@@ -1130,9 +1385,10 @@ function CompanyListView({ token, onSelectCompany, showToast }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // VIEW 2 — EMPLOYEE LIST (for a selected company)
 // ─────────────────────────────────────────────────────────────────────────────
-function EmployeeListView({ token, company, onBack, showToast }) {
+function EmployeeListView({ token, company, rater, onBack, showToast }) {
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [periods, setPeriods] = useState([]);
   const [activePeriodId, setActivePeriodId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -1140,6 +1396,7 @@ function EmployeeListView({ token, company, onBack, showToast }) {
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [showEditCompany, setShowEditCompany] = useState(false);
+  const [showDeleteCompany, setShowDeleteCompany] = useState(false);
   const [currentCompany, setCurrentCompany] = useState(company);
   const [resending, setResending] = useState(null);
   const [toggling, setToggling] = useState(null);
@@ -1148,15 +1405,17 @@ function EmployeeListView({ token, company, onBack, showToast }) {
   async function fetchData() {
     setLoading(true);
     try {
-      const [empData, deptData] = await Promise.all([
+      const [empData, deptData, periodData] = await Promise.all([
         getEmployees(token, currentCompany.id),
         getDepartments(token, currentCompany.id),
+        getPeriods(token, currentCompany.id),
       ]);
       setEmployees(empData.employees ?? []);
       setActivePeriodId(empData.active_period_id ?? null);
       setDepartments(deptData.departments ?? []);
+      setPeriods(periodData.periods ?? []);
     } catch (err) {
-      showToast("Failed to load employees: " + err.message);
+      showToast("Failed to load data: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -1231,21 +1490,82 @@ function EmployeeListView({ token, company, onBack, showToast }) {
               onClick={() => setShowEditCompany(true)}>
               Edit Company
             </button>
+            <button
+              className="btn"
+              style={{
+                fontSize: "12px",
+                padding: "5px 12px",
+                background: "#FFEBEE",
+                color: "#C62828",
+                border: "1.5px solid #EF9A9A"
+              }}
+              onClick={() => setShowDeleteCompany(true)}
+            >
+              Delete Company
+            </button>
           </div>
-          <p className="page-header__subtitle">
-            Managing employees · {employees.length} total
-            {!activePeriodId && (
-              <span style={{ color: "#e65100", marginLeft: "8px", fontSize: "12px" }}>
-                ⚠️ No active period — relationship assignments disabled
-              </span>
+          <div className="page-header__subtitle">
+            <div style={{ marginBottom: "4px" }}>
+              Managing employees · {employees.length} total
+              {!loading && !activePeriodId && (
+                <span style={{ color: "#e65100", marginLeft: "8px", fontSize: "12px" }}>
+                  ⚠️ No active period — relationship assignments disabled
+                </span>
+              )}
+            </div>
+            {(currentCompany.address || currentCompany.contact_name || currentCompany.contact_email) && (
+              <div style={{
+                display: "flex",
+                gap: "12px",
+                fontSize: "12px",
+                color: "#666",
+                flexWrap: "wrap",
+                marginTop: "6px",
+                alignItems: "center"
+              }}>
+                {currentCompany.address && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    📍 <span>{currentCompany.address}</span>
+                  </span>
+                )}
+                {currentCompany.address && (currentCompany.contact_name || currentCompany.contact_email) && (
+                  <span style={{ color: "#ddd", fontSize: "14px" }}>•</span>
+                )}
+                {currentCompany.contact_name && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    👤 <span>{currentCompany.contact_name}</span>
+                  </span>
+                )}
+                {currentCompany.contact_name && currentCompany.contact_email && (
+                  <span style={{ color: "#ddd", fontSize: "14px" }}>•</span>
+                )}
+                {currentCompany.contact_email && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    ✉️ <a
+                      href={`mailto:${currentCompany.contact_email}`}
+                      style={{ color: "#1565c0", textDecoration: "none" }}
+                    >
+                      {currentCompany.contact_email}
+                    </a>
+                  </span>
+                )}
+              </div>
             )}
-          </p>
+          </div>
         </div>
         <div className="page-header__actions" />
       </div>
 
       {/* ── Periods panel ── */}
-      <PeriodsPanel token={token} company={currentCompany} showToast={showToast} onPeriodChange={fetchData} />
+      <PeriodsPanel
+        token={token}
+        company={currentCompany}
+        periods={periods}
+        loading={loading}
+        rater={rater} // ✅ Pass rater
+        showToast={showToast}
+        onPeriodChange={fetchData}
+      />
 
       {/* ── Employee table ── */}
       <div style={{ borderTop: "1px solid #e8eaf0", paddingTop: "20px", marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1376,6 +1696,19 @@ function EmployeeListView({ token, company, onBack, showToast }) {
           }}
         />
       )}
+      {showDeleteCompany && (
+        <DeleteCompanyModal
+          token={token}
+          company={currentCompany}
+          adminEmail={rater?.email}
+          onClose={() => setShowDeleteCompany(false)}
+          onDeleted={(msg) => {
+            setShowDeleteCompany(false);
+            showToast(msg);
+            onBack();
+          }}
+        />
+      )}
     </>
   );
 }
@@ -1436,6 +1769,7 @@ export default function AdminEmployees() {
           <EmployeeListView
             token={token}
             company={selectedCompany}
+            rater={rater}
             onBack={() => setSelectedCompany(null)}
             showToast={showToast}
           />

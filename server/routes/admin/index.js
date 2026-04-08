@@ -76,15 +76,35 @@ router.use("/employees/bulk", bulkUpload);
 // COMPANIES
 // =============================================================================
 
-// GET /api/v1/admin/companies
+// server/routes/admin/index.js
+// REPLACE the existing GET /companies route with this:
+
 router.get("/companies", async (req, res) => {
   const { data, error } = await db
     .from("companies")
-    .select("id, name, address, contact_name, contact_email, logo_url, is_active, created_at")
+    .select(`
+      id, name, address, contact_name, contact_email, logo_url, created_at,
+      evaluation_periods(is_active),
+      users(id)
+    `)
     .order("name");
 
   if (error) return res.status(500).json({ message: error.message });
-  res.json({ companies: data });
+
+  const companies = data.map(c => ({
+    id: c.id,
+    name: c.name,
+    address: c.address,
+    contact_name: c.contact_name,
+    contact_email: c.contact_email,
+    logo_url: c.logo_url,
+    created_at: c.created_at,
+    is_active: c.evaluation_periods?.some(p => p.is_active) ?? false,
+    employee_count: c.users?.length ?? 0, // ✅ NEW
+    period_count: c.evaluation_periods?.length ?? 0, // ✅ NEW
+  }));
+
+  res.json({ companies });
 });
 
 // POST /api/v1/admin/companies
@@ -111,6 +131,7 @@ router.post("/companies", logoUpload.single("logo"), async (req, res) => {
         contact_name,
         contact_email,
         logo_url: null,
+        is_active: false,
       })
       .select("id, name, logo_url")
       .single();
@@ -152,7 +173,12 @@ router.post("/companies", logoUpload.single("logo"), async (req, res) => {
         .select("id, label, start_date, end_date, deadline_date, is_active")
         .single();
 
-      if (!periodErr) period = newPeriod;
+      // ✅ PASTE THE NEW CODE HERE:
+      if (!periodErr) {
+        period = newPeriod;
+        // Always sync, regardless of is_active status
+        await syncCompanyActiveStatus(company.id);
+      }
     }
 
     return res.status(201).json({
@@ -232,6 +258,76 @@ router.put("/companies/:id", logoUpload.single("logo"), async (req, res) => {
   }
 });
 
+// server/routes/admin/index.js
+// ADD THIS ROUTE after the PUT /companies/:id route
+
+// DELETE /api/v1/admin/companies/:id
+router.delete("/companies/:id", async (req, res) => {
+  const { id } = req.params;
+  const { admin_email } = req.body;
+
+  // ⚠️ Verify admin email matches logged-in user
+  const { data: admin } = await db
+    .from("users")
+    .select("email")
+    .eq("id", req.user.id)
+    .single();
+
+  if (!admin || admin.email.toLowerCase() !== admin_email?.toLowerCase()) {
+    return res.status(403).json({ 
+      message: "Email confirmation failed. Please enter your admin email correctly." 
+    });
+  }
+
+  // ⚠️ Check if company has employees
+  const { count: empCount } = await db
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", id);
+
+  if (empCount > 0) {
+    return res.status(409).json({ 
+      message: `Cannot delete company with ${empCount} employee(s). Remove all employees first.`,
+      employee_count: empCount,
+    });
+  }
+
+  // ⚠️ Check if company has periods
+  const { count: periodCount } = await db
+    .from("evaluation_periods")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", id);
+
+  if (periodCount > 0) {
+    return res.status(409).json({ 
+      message: `Cannot delete company with ${periodCount} evaluation period(s). Delete all periods first.`,
+      period_count: periodCount,
+    });
+  }
+
+  // Get company data (for logo cleanup)
+  const { data: company } = await db
+    .from("companies")
+    .select("id, name, logo_url")
+    .eq("id", id)
+    .single();
+
+  if (!company) {
+    return res.status(404).json({ message: "Company not found." });
+  }
+
+  // Delete company
+  const { error } = await db.from("companies").delete().eq("id", id);
+  if (error) return res.status(500).json({ message: error.message });
+
+  // Delete logo from storage
+  if (company.logo_url) {
+    await deleteLogo(company.logo_url);
+  }
+
+  res.json({ message: `Company "${company.name}" deleted successfully.` });
+});
+
 // PUT /api/v1/admin/companies/:id/logo
 router.put("/companies/:id/logo", logoUpload.single("logo"), async (req, res) => {
   const { id } = req.params;
@@ -303,6 +399,18 @@ router.get("/periods", async (req, res) => {
   res.json({ periods: data });
 });
 
+router.get("/periods/:id/submission-count", async (req, res) => {
+  const { id } = req.params;
+
+  const { count } = await db
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("period_id", id);
+
+  res.json({ submission_count: count ?? 0 });
+});
+
+// POST /api/v1/admin/periods
 // POST /api/v1/admin/periods
 router.post("/periods", async (req, res) => {
   const { company_id, label, start_date, end_date, deadline_date } = req.body;
@@ -327,6 +435,10 @@ router.post("/periods", async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ message: error.message });
+
+  // ✅ ADD THIS: Always sync after creating a period
+  await syncCompanyActiveStatus(company_id);
+
   res.status(201).json({ message: "Period created.", period: data });
 });
 
@@ -374,14 +486,31 @@ router.put("/periods/:id", async (req, res) => {
   res.json({ message: "Period updated.", period: data });
 });
 
+// server/routes/admin/index.js
+// REPLACE the existing DELETE /api/v1/admin/periods/:id route with this:
+
 // DELETE /api/v1/admin/periods/:id
 router.delete("/periods/:id", async (req, res) => {
   const { id } = req.params;
+  const { admin_email } = req.body; // ✅ NEW: require email confirmation
 
-  // Fetch first so we have company_id for the sync after deletion
+  // ⚠️ Verify admin email matches logged-in user
+  const { data: admin } = await db
+    .from("users")
+    .select("email")
+    .eq("id", req.user.id)
+    .single();
+
+  if (!admin || admin.email.toLowerCase() !== admin_email?.toLowerCase()) {
+    return res.status(403).json({ 
+      message: "Email confirmation failed. Please enter your admin email correctly." 
+    });
+  }
+
+  // Fetch period first (need company_id for sync after deletion)
   const { data: period, error: fetchErr } = await db
     .from("evaluation_periods")
-    .select("id, company_id")
+    .select("id, company_id, label, is_active")
     .eq("id", id)
     .single();
 
@@ -389,23 +518,33 @@ router.delete("/periods/:id", async (req, res) => {
     return res.status(404).json({ message: "Evaluation period not found." });
   }
 
-  const { count } = await db
+  // ⚠️ Cannot delete active period
+  if (period.is_active) {
+    return res.status(409).json({
+      message: `Cannot delete the active period "${period.label}". Deactivate it first.`,
+    });
+  }
+
+  // ⚠️ Check for submissions
+  const { count: submissionCount } = await db
     .from("submissions")
     .select("id", { count: "exact", head: true })
     .eq("period_id", id);
 
-  if (count > 0) {
+  if (submissionCount > 0) {
     return res.status(409).json({
-      message: `Cannot delete a period that has ${count} submission(s). Deactivate it instead.`,
+      message: `Cannot delete period "${period.label}" with ${submissionCount} submission(s). Submissions cannot be deleted.`,
+      submission_count: submissionCount,
     });
   }
 
+  // Delete period
   const { error } = await db.from("evaluation_periods").delete().eq("id", id);
   if (error) return res.status(500).json({ message: error.message });
 
   await syncCompanyActiveStatus(period.company_id);
 
-  res.json({ message: "Period deleted." });
+  res.json({ message: `Period "${period.label}" deleted successfully.` });
 });
 
 // =============================================================================
