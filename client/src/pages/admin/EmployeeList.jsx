@@ -524,15 +524,15 @@ function EditCompanyModal({ token, company, onClose, onSaved }) {
   const logoInputRef = useRef();
 
   const [form, setForm] = useState({
-    name:          company.name          ?? "",
-    address:       company.address       ?? "",
-    contact_name:  company.contact_name  ?? "",
+    name: company.name ?? "",
+    address: company.address ?? "",
+    contact_name: company.contact_name ?? "",
     contact_email: company.contact_email ?? "",
   });
 
-  const [logoFile,    setLogoFile]    = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(company.logo_url ?? null);
-  const [error,  setError]  = useState("");
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   function setF(field, val) { setForm(f => ({ ...f, [field]: val })); }
@@ -552,9 +552,9 @@ function EditCompanyModal({ token, company, onClose, onSaved }) {
     setError("");
 
     const fd = new FormData();
-    fd.append("name",          form.name.trim());
-    fd.append("address",       form.address);
-    fd.append("contact_name",  form.contact_name);
+    fd.append("name", form.name.trim());
+    fd.append("address", form.address);
+    fd.append("contact_name", form.contact_name);
     fd.append("contact_email", form.contact_email);
     if (logoFile) fd.append("logo", logoFile);
 

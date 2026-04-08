@@ -14,6 +14,20 @@ const db = supabaseAdmin; // service-role client, bypasses RLS
 router.use(authenticate);
 router.use(requireAdmin);
 
+// ── Syncs companies.is_active based on whether it has any active evaluation period
+const syncCompanyActiveStatus = async (companyId) => {
+  const { count } = await db
+    .from("evaluation_periods")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", companyId)
+    .eq("is_active", true);
+
+  await db
+    .from("companies")
+    .update({ is_active: count > 0 })
+    .eq("id", companyId);
+};
+
 // ── Logo upload (multer — stores to /public/logos/) ────────────────────────────
 
 const logoUpload = multer({
@@ -354,12 +368,26 @@ router.put("/periods/:id", async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ message: error.message });
+
+  await syncCompanyActiveStatus(existing.company_id);
+
   res.json({ message: "Period updated.", period: data });
 });
 
 // DELETE /api/v1/admin/periods/:id
 router.delete("/periods/:id", async (req, res) => {
   const { id } = req.params;
+
+  // Fetch first so we have company_id for the sync after deletion
+  const { data: period, error: fetchErr } = await db
+    .from("evaluation_periods")
+    .select("id, company_id")
+    .eq("id", id)
+    .single();
+
+  if (fetchErr || !period) {
+    return res.status(404).json({ message: "Evaluation period not found." });
+  }
 
   const { count } = await db
     .from("submissions")
@@ -374,6 +402,9 @@ router.delete("/periods/:id", async (req, res) => {
 
   const { error } = await db.from("evaluation_periods").delete().eq("id", id);
   if (error) return res.status(500).json({ message: error.message });
+
+  await syncCompanyActiveStatus(period.company_id);
+
   res.json({ message: "Period deleted." });
 });
 
