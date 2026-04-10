@@ -274,8 +274,8 @@ router.delete("/companies/:id", async (req, res) => {
     .single();
 
   if (!admin || admin.email.toLowerCase() !== admin_email?.toLowerCase()) {
-    return res.status(403).json({ 
-      message: "Email confirmation failed. Please enter your admin email correctly." 
+    return res.status(403).json({
+      message: "Email confirmation failed. Please enter your admin email correctly."
     });
   }
 
@@ -286,7 +286,7 @@ router.delete("/companies/:id", async (req, res) => {
     .eq("company_id", id);
 
   if (empCount > 0) {
-    return res.status(409).json({ 
+    return res.status(409).json({
       message: `Cannot delete company with ${empCount} employee(s). Remove all employees first.`,
       employee_count: empCount,
     });
@@ -299,7 +299,7 @@ router.delete("/companies/:id", async (req, res) => {
     .eq("company_id", id);
 
   if (periodCount > 0) {
-    return res.status(409).json({ 
+    return res.status(409).json({
       message: `Cannot delete company with ${periodCount} evaluation period(s). Delete all periods first.`,
       period_count: periodCount,
     });
@@ -410,6 +410,170 @@ router.get("/periods/:id/submission-count", async (req, res) => {
   res.json({ submission_count: count ?? 0 });
 });
 
+// server/routes/admin/index.js
+// ADD this route after GET /periods/:id/submission-count
+
+// GET /api/v1/admin/periods/:id/submissions
+router.get("/periods/:id/submissions", async (req, res) => {
+  const { id } = req.params;
+
+  const { data: period, error: periodErr } = await db
+    .from("evaluation_periods")
+    .select("id, label, start_date, end_date, deadline_date, is_active")
+    .eq("id", id)
+    .single();
+
+  if (periodErr || !period) {
+    return res.status(404).json({ message: "Evaluation period not found." });
+  }
+
+  // Get all submissions for this period with rater/ratee details
+  const { data: submissions, error } = await db
+    .from("submissions")
+    .select(`
+      id,
+      submitted_at,
+      rater:rater_id (id, full_name, email),
+      ratee:ratee_id (id, full_name, email),
+      relationship
+    `)
+    .eq("period_id", id)
+    .order("submitted_at", { ascending: false });
+
+  if (error) return res.status(500).json({ message: error.message });
+
+  // Format the data
+  const formattedSubmissions = (submissions ?? []).map(s => ({
+    id: s.id,
+    submitted_at: s.submitted_at,
+    rater_name: s.rater?.full_name ?? "Unknown",
+    rater_email: s.rater?.email ?? "",
+    ratee_name: s.ratee?.full_name ?? "Unknown",
+    ratee_email: s.ratee?.email ?? "",
+    relationship: s.relationship,
+  }));
+
+  res.json({
+    period,
+    submissions: formattedSubmissions,
+    total: formattedSubmissions.length,
+  });
+});
+
+// server/routes/admin/index.js
+// ADD this route after GET /periods/:id/submissions
+
+// GET /api/v1/admin/periods/:id/submissions/export
+router.get("/periods/:id/submissions/export", async (req, res) => {
+  const { id } = req.params;
+
+  const { data: period, error: periodErr } = await db
+    .from("evaluation_periods")
+    .select("id, label, start_date, end_date, company_id")
+    .eq("id", id)
+    .single();
+
+  if (periodErr || !period) {
+    return res.status(404).json({ message: "Evaluation period not found." });
+  }
+
+  // Get submissions with full survey responses
+  const { data: submissions, error: subErr } = await db
+    .from("submissions")
+    .select(`
+      id,
+      submitted_at,
+      relationship,
+      rater:rater_id (id, full_name, email, departments(name)),
+      ratee:ratee_id (id, full_name, email, departments(name)),
+      responses
+    `)
+    .eq("period_id", id)
+    .order("submitted_at", { ascending: false });
+
+  if (subErr) {
+    return res.status(500).json({ message: subErr.message });
+  }
+
+  if (!submissions || submissions.length === 0) {
+    return res.status(404).json({ message: "No submissions found for this period." });
+  }
+
+  // Get all unique questions from responses
+  const allQuestions = new Set();
+  submissions.forEach(sub => {
+    if (sub.responses && typeof sub.responses === 'object') {
+      Object.keys(sub.responses).forEach(q => allQuestions.add(q));
+    }
+  });
+  const questionsList = Array.from(allQuestions).sort();
+
+  // Build Excel data
+  const XLSX = await import("xlsx");
+  
+  // Sheet 1: Summary
+  const summaryData = submissions.map((sub, idx) => ({
+    '#': idx + 1,
+    'Submission ID': sub.id,
+    'Submitted At': new Date(sub.submitted_at).toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }),
+    'Rater Name': sub.rater?.full_name || 'Unknown',
+    'Rater Email': sub.rater?.email || '',
+    'Rater Department': sub.rater?.departments?.name || '',
+    'Ratee Name': sub.ratee?.full_name || 'Unknown',
+    'Ratee Email': sub.ratee?.email || '',
+    'Ratee Department': sub.ratee?.departments?.name || '',
+    'Relationship': sub.relationship?.charAt(0).toUpperCase() + sub.relationship?.slice(1) || '',
+  }));
+
+  // Sheet 2: Detailed Responses
+  const detailedData = [];
+  submissions.forEach(sub => {
+    const baseRow = {
+      'Submission ID': sub.id,
+      'Submitted At': new Date(sub.submitted_at).toLocaleString('en-US'),
+      'Rater': sub.rater?.full_name || 'Unknown',
+      'Ratee': sub.ratee?.full_name || 'Unknown',
+      'Relationship': sub.relationship?.charAt(0).toUpperCase() + sub.relationship?.slice(1) || '',
+    };
+
+    // Add responses for each question
+    const responses = sub.responses || {};
+    questionsList.forEach(question => {
+      baseRow[question] = responses[question] !== undefined ? responses[question] : '';
+    });
+
+    detailedData.push(baseRow);
+  });
+
+  // Create workbook
+  const wb = XLSX.default.utils.book_new();
+
+  // Add Summary sheet
+  const wsSummary = XLSX.default.utils.json_to_sheet(summaryData);
+  XLSX.default.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+  // Add Detailed Responses sheet
+  const wsDetailed = XLSX.default.utils.json_to_sheet(detailedData);
+  XLSX.default.utils.book_append_sheet(wb, wsDetailed, "Detailed Responses");
+
+  // Generate buffer
+  const excelBuffer = XLSX.default.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+  // Send file
+  const filename = `${period.label.replace(/[^a-z0-9]/gi, '_')}_Submissions_${new Date().toISOString().split('T')[0]}.xlsx`;
+  
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(excelBuffer);
+});
+
 // POST /api/v1/admin/periods
 // POST /api/v1/admin/periods
 router.post("/periods", async (req, res) => {
@@ -502,8 +666,8 @@ router.delete("/periods/:id", async (req, res) => {
     .single();
 
   if (!admin || admin.email.toLowerCase() !== admin_email?.toLowerCase()) {
-    return res.status(403).json({ 
-      message: "Email confirmation failed. Please enter your admin email correctly." 
+    return res.status(403).json({
+      message: "Email confirmation failed. Please enter your admin email correctly."
     });
   }
 

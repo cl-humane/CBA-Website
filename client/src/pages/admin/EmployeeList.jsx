@@ -20,7 +20,8 @@ import {
   getEmployees, getDepartments,
   addEmployee, resendCode, toggleActive, bulkUpload,
   updateRelationships,
-  getPeriods, addPeriod, updatePeriod, deletePeriod, getPeriodSubmissionCount, // ✅ Added getPeriodSubmissionCount
+  getPeriods, addPeriod, updatePeriod, deletePeriod,
+  getPeriodSubmissionCount, getPeriodSubmissions, exportPeriodSubmissions,
 } from "../../api/admin";
 import "../../assets/admin/EmployeeList.css";
 
@@ -304,6 +305,196 @@ function PeriodModal({ token, companyId, existing, onClose, onSaved }) {
           <button className="btn btn--primary" onClick={handleSubmit} disabled={saving}>
             {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Period"}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// client/src/pages/admin/EmployeeList.jsx
+// REPLACE the PeriodSubmissionsModal component with this updated version:
+
+function PeriodSubmissionsModal({ token, period, onClose }) {
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false); // ✅ NEW
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    async function fetchSubmissions() {
+      try {
+        const { getPeriodSubmissions } = await import("../../api/admin");
+        const data = await getPeriodSubmissions(token, period.id);
+        setSubmissions(data.submissions ?? []);
+      } catch (err) {
+        setError("Failed to load submissions: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSubmissions();
+  }, [period.id, token]);
+
+  // ✅ NEW: Export handler
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const { exportPeriodSubmissions } = await import("../../api/admin");
+      await exportPeriodSubmissions(token, period.id);
+    } catch (err) {
+      setError("Export failed: " + err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const filtered = submissions.filter(s =>
+    s.rater_name.toLowerCase().includes(search.toLowerCase()) ||
+    s.ratee_name.toLowerCase().includes(search.toLowerCase()) ||
+    s.rater_email.toLowerCase().includes(search.toLowerCase()) ||
+    s.ratee_email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const relationshipColors = {
+    peer: { color: "#1565c0", bg: "#E3F2FD", label: "Peer" },
+    subordinate: { color: "#6a1b9a", bg: "#F3E5F5", label: "Subordinate" },
+    superior: { color: "#e65100", bg: "#FFF3E0", label: "Superior" },
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal" style={{ maxWidth: "900px", maxHeight: "90vh" }}>
+        <div className="modal__header" style={{ background: "#E8EAF6", borderBottom: "1px solid #C5CAE9" }}>
+          <div>
+            <h3 className="modal__title" style={{ color: "#1a1a2e", marginBottom: "4px" }}>
+              📊 Submissions — {period.label}
+            </h3>
+            <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+              {period.start_date} → {period.end_date} · Deadline: {period.deadline_date}
+            </p>
+          </div>
+          <button className="modal__close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="modal__body" style={{ padding: "20px 24px", maxHeight: "70vh", overflowY: "auto" }}>
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "40px 0", color: "#666" }}>
+              Loading submissions...
+            </p>
+          ) : error ? (
+            <p style={{ color: "#C62828", textAlign: "center", padding: "20px" }}>{error}</p>
+          ) : (
+            <>
+              {/* Search bar + Export button */}
+              <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                <input
+                  className="filter-row__search"
+                  placeholder="Search by rater or ratee name/email..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ fontSize: "13px", color: "#666", whiteSpace: "nowrap" }}>
+                  {filtered.length} submission{filtered.length !== 1 ? "s" : ""}
+                </span>
+                {/* ✅ NEW: Export to Excel button */}
+                {submissions.length > 0 && (
+                  <button
+                    className="btn btn--secondary"
+                    onClick={handleExport}
+                    disabled={exporting}
+                    style={{ fontSize: "13px", padding: "7px 16px", whiteSpace: "nowrap" }}
+                  >
+                    {exporting ? "Exporting..." : "📥 Export to Excel"}
+                  </button>
+                )}
+              </div>
+
+              {filtered.length === 0 ? (
+                <div style={{
+                  textAlign: "center",
+                  padding: "40px 20px",
+                  color: "#888",
+                  fontSize: "14px"
+                }}>
+                  {search ? "No submissions match your search." : "No submissions yet for this period."}
+                </div>
+              ) : (
+                <div className="table-wrapper" style={{ boxShadow: "none", border: "1px solid #e8eaf0" }}>
+                  <table className="emp-table">
+                    <thead>
+                      <tr>
+                        <th className="emp-table__th">Rater (Who Submitted)</th>
+                        <th className="emp-table__th">Ratee (Who Was Rated)</th>
+                        <th className="emp-table__th">Relationship</th>
+                        <th className="emp-table__th">Submitted At</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((sub, i) => {
+                        const relConfig = relationshipColors[sub.relationship] || {
+                          color: "#666",
+                          bg: "#f5f5f5",
+                          label: sub.relationship
+                        };
+
+                        return (
+                          <tr key={sub.id} className={`emp-table__row ${i % 2 === 0 ? "" : "emp-table__row--alt"}`}>
+                            <td className="emp-table__td">
+                              <div style={{ fontWeight: 600, color: "#1a1a2e", marginBottom: "2px" }}>
+                                {sub.rater_name}
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#888" }}>
+                                {sub.rater_email}
+                              </div>
+                            </td>
+                            <td className="emp-table__td">
+                              <div style={{ fontWeight: 600, color: "#1a1a2e", marginBottom: "2px" }}>
+                                {sub.ratee_name}
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#888" }}>
+                                {sub.ratee_email}
+                              </div>
+                            </td>
+                            <td className="emp-table__td">
+                              <span style={{
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                padding: "3px 10px",
+                                borderRadius: "10px",
+                                color: relConfig.color,
+                                background: relConfig.bg,
+                                display: "inline-block"
+                              }}>
+                                {relConfig.label}
+                              </span>
+                            </td>
+                            <td className="emp-table__td" style={{ fontSize: "12px", color: "#666" }}>
+                              {new Date(sub.submitted_at).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="modal__footer" style={{ justifyContent: "space-between" }}>
+          <div style={{ fontSize: "13px", color: "#666" }}>
+            <b>{submissions.length}</b> total submission{submissions.length !== 1 ? "s" : ""} for this period
+          </div>
+          <button className="btn btn--primary" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
@@ -1177,10 +1368,14 @@ function BulkUploadModal({ token, onClose, onSaved }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PERIODS PANEL (inline inside company view — no separate page needed)
 // ─────────────────────────────────────────────────────────────────────────────
+// client/src/pages/admin/EmployeeList.jsx
+// REPLACE the PeriodsPanel component with this updated version:
+
 function PeriodsPanel({ token, company, periods, loading, rater, showToast, onPeriodChange }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editPeriod, setEditPeriod] = useState(null);
-  const [deletePeriod, setDeletePeriod] = useState(null); // ✅ CHANGED: now stores period object
+  const [deletePeriod, setDeletePeriod] = useState(null);
+  const [viewSubmissions, setViewSubmissions] = useState(null); // ✅ NEW
 
   return (
     <div style={{ marginBottom: "28px" }}>
@@ -1231,6 +1426,16 @@ function PeriodsPanel({ token, company, periods, loading, rater, showToast, onPe
                 </div>
               </div>
               <div style={{ display: "flex", gap: "6px" }}>
+                {/* ✅ NEW: View Submissions button */}
+                <button
+                  className="action-btn"
+                  style={{ color: "#1565c0", borderColor: "#90CAF9", fontWeight: 600 }}
+                  onClick={() => setViewSubmissions(p)}
+                  title="View all submissions for this period"
+                >
+                  📊 Submissions
+                </button>
+
                 {!p.is_active && (
                   <button
                     className="action-btn"
@@ -1250,7 +1455,7 @@ function PeriodsPanel({ token, company, periods, loading, rater, showToast, onPe
                 <button className="action-btn" onClick={() => setEditPeriod(p)}>Edit</button>
                 <button
                   className="action-btn action-btn--danger"
-                  onClick={() => setDeletePeriod(p)} // ✅ CHANGED: pass whole period object
+                  onClick={() => setDeletePeriod(p)}
                 >
                   Delete
                 </button>
@@ -1278,7 +1483,6 @@ function PeriodsPanel({ token, company, periods, loading, rater, showToast, onPe
           onSaved={(msg) => { setEditPeriod(null); showToast(msg); onPeriodChange?.(); }}
         />
       )}
-      {/* ✅ NEW: Delete Period Modal with email confirmation */}
       {deletePeriod && (
         <DeletePeriodModal
           token={token}
@@ -1290,6 +1494,14 @@ function PeriodsPanel({ token, company, periods, loading, rater, showToast, onPe
             showToast(msg);
             onPeriodChange?.();
           }}
+        />
+      )}
+      {/* ✅ NEW: Submissions Modal */}
+      {viewSubmissions && (
+        <PeriodSubmissionsModal
+          token={token}
+          period={viewSubmissions}
+          onClose={() => setViewSubmissions(null)}
         />
       )}
     </div>

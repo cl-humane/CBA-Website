@@ -42,16 +42,16 @@ export async function updateCompany(token, id, formData) {
   return data;
 }
 
-export const deleteCompany = (token, id, adminEmail) => 
-  apiFetch(token, `/admin/companies/${id}`, { 
+export const deleteCompany = (token, id, adminEmail) =>
+  apiFetch(token, `/admin/companies/${id}`, {
     method: "DELETE",
     body: JSON.stringify({ admin_email: adminEmail })
   });
 
 // ── Evaluation Periods (scoped to a company) ──────────────────────────────────
-export const getPeriods   = (token, companyId)     => apiFetch(token, `/admin/periods?company_id=${companyId}`);
-export const addPeriod    = (token, payload)        => apiFetch(token, "/admin/periods", { method: "POST", body: JSON.stringify(payload) });
-export const updatePeriod = (token, id, payload)   => apiFetch(token, `/admin/periods/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+export const getPeriods = (token, companyId) => apiFetch(token, `/admin/periods?company_id=${companyId}`);
+export const addPeriod = (token, payload) => apiFetch(token, "/admin/periods", { method: "POST", body: JSON.stringify(payload) });
+export const updatePeriod = (token, id, payload) => apiFetch(token, `/admin/periods/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 export const deletePeriod = (token, id, adminEmail) =>
   apiFetch(token, `/admin/periods/${id}`, {
     method: "DELETE",
@@ -60,12 +60,51 @@ export const deletePeriod = (token, id, adminEmail) =>
 export const getPeriodSubmissionCount = (token, periodId) =>
   apiFetch(token, `/admin/periods/${periodId}/submission-count`);
 
+export const getPeriodSubmissions = (token, periodId) =>
+  apiFetch(token, `/admin/periods/${periodId}/submissions`);
+
+// client/src/api/admin.js
+// ADD this after getPeriodSubmissions:
+
+// ✅ NEW: Export period submissions to Excel
+export async function exportPeriodSubmissions(token, periodId) {
+  const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+  const res = await fetch(`${API_URL}/api/v1/admin/periods/${periodId}/submissions/export`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message ?? "Export failed");
+  }
+
+  // Get filename from header or use default
+  const contentDisposition = res.headers.get('Content-Disposition');
+  let filename = 'submissions.xlsx';
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch) filename = filenameMatch[1];
+  }
+
+  // Download file
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 // ── Employees (scoped to a company) ───────────────────────────────────────────
-export const getEmployees   = (token, companyId) => apiFetch(token, `/admin/employees?company_id=${companyId}`);
+export const getEmployees = (token, companyId) => apiFetch(token, `/admin/employees?company_id=${companyId}`);
 export const getDepartments = (token, companyId) => apiFetch(token, `/admin/departments?company_id=${companyId}`);
-export const addEmployee    = (token, payload)   => apiFetch(token, "/admin/employees", { method: "POST", body: JSON.stringify(payload) });
-export const resendCode     = (token, id)        => apiFetch(token, `/admin/employees/${id}/resend-code`, { method: "POST" });
-export const toggleActive   = (token, id, val)   => apiFetch(token, `/admin/employees/${id}`, { method: "PUT", body: JSON.stringify({ is_active: val }) });
+export const addEmployee = (token, payload) => apiFetch(token, "/admin/employees", { method: "POST", body: JSON.stringify(payload) });
+export const resendCode = (token, id) => apiFetch(token, `/admin/employees/${id}/resend-code`, { method: "POST" });
+export const toggleActive = (token, id, val) => apiFetch(token, `/admin/employees/${id}`, { method: "PUT", body: JSON.stringify({ is_active: val }) });
 
 // PUT /api/v1/admin/employees/:id/relationships
 export const updateRelationships = (token, id, relationships, period_id) =>

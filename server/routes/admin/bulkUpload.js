@@ -67,7 +67,7 @@ function parseExcel(buffer) {
     throw new Error("Could not find header row. Make sure your file uses the provided template.");
   }
 
-  const headers  = allRows[headerRowIdx].map(h => String(h).trim().toLowerCase());
+  const headers = allRows[headerRowIdx].map(h => String(h).trim().toLowerCase());
   const dataRows = allRows.slice(headerRowIdx + 1);
 
   const employees = [];
@@ -83,12 +83,12 @@ function parseExcel(buffer) {
     if (obj.last_name.toLowerCase() === "uppercase") continue;
 
     employees.push({
-      last_name:     obj.last_name.toUpperCase(),
-      first_name:    obj.first_name.toUpperCase(),
-      middle_name:   obj.middle_name ? obj.middle_name.toUpperCase() : null,
-      email:         obj.email.toLowerCase(),
-      role:          (obj.role ?? "employee").toLowerCase() === "admin" ? "admin" : "employee",
-      department:    obj.department ? obj.department.trim() : null,
+      last_name: obj.last_name.toUpperCase(),
+      first_name: obj.first_name.toUpperCase(),
+      middle_name: obj.middle_name ? obj.middle_name.toUpperCase() : null,
+      email: obj.email.toLowerCase(),
+      role: (obj.role ?? "employee").toLowerCase() === "admin" ? "admin" : "employee",
+      department: obj.department ? obj.department.trim() : null,
       // Read from "assignment" column (supports both comma and + separators)
       relationships: parseRelationships(obj.assignment ?? ""),
     });
@@ -116,7 +116,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     return res.status(422).json({ message: "No valid employee rows found in the file." });
   }
 
-  const supabase  = getSupabase();
+  const supabase = getSupabase();
   const companyId = req.user?.company_id;
   if (!companyId) {
     return res.status(403).json({ message: "Company context missing from token." });
@@ -138,8 +138,8 @@ router.post("/", upload.single("file"), async (req, res) => {
     .eq("is_active", true)
     .maybeSingle();
 
-  const added          = [];
-  const skipped        = [];
+  const added = [];
+  const skipped = [];
   const email_failures = [];
 
   // email → { userId, relationships[] }
@@ -183,15 +183,15 @@ router.post("/", upload.single("file"), async (req, res) => {
 
       // Insert into public.users
       const { error: userErr } = await supabase.from("users").insert({
-        id:            userId,
-        company_id:    companyId,
+        id: userId,
+        company_id: companyId,
         department_id: departmentId,
-        email:         emp.email,
-        last_name:     emp.last_name,
-        first_name:    emp.first_name,
-        middle_name:   emp.middle_name,
-        role:          emp.role,
-        full_name:     "",
+        email: emp.email,
+        last_name: emp.last_name,
+        first_name: emp.first_name,
+        middle_name: emp.middle_name,
+        role: emp.role,
+        full_name: "",
       });
 
       if (userErr) {
@@ -201,26 +201,26 @@ router.post("/", upload.single("file"), async (req, res) => {
       }
 
       // Create registration code
-      const code    = generateCode();
+      const code = generateCode();
       const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       await supabase.from("registration_codes").insert({
-        company_id:    companyId,
-        user_id:       userId,
-        email:         emp.email,
-        last_name:     emp.last_name,
-        first_name:    emp.first_name,
-        middle_name:   emp.middle_name,
-        full_name:     "",
-        role:          emp.role,
+        company_id: companyId,
+        user_id: userId,
+        email: emp.email,
+        last_name: emp.last_name,
+        first_name: emp.first_name,
+        middle_name: emp.middle_name,
+        full_name: "",
+        role: emp.role,
         department_id: departmentId,
         code,
-        status:        "pending",
-        expires_at:    expires,
+        status: "pending",
+        expires_at: expires,
       });
 
       // Send email
-      const mi       = emp.middle_name ? ` ${emp.middle_name[0]}.` : "";
+      const mi = emp.middle_name ? ` ${emp.middle_name[0]}.` : "";
       const fullName = `${emp.last_name}, ${emp.first_name}${mi}`;
       try {
         await sendRegistrationCode({ email: emp.email, full_name: fullName, code });
@@ -282,9 +282,9 @@ router.post("/", upload.single("file"), async (req, res) => {
         for (const rateeId of newMembers) {
           if (raterId === rateeId) continue;
           assignmentRows.push({
-            period_id:    activePeriod.id,
-            rater_id:     raterId,
-            ratee_id:     rateeId,
+            period_id: activePeriod.id,
+            rater_id: raterId,
+            ratee_id: rateeId,
             relationship: relType,
           });
         }
@@ -294,15 +294,15 @@ router.post("/", upload.single("file"), async (req, res) => {
       for (const newUserId of newMembers) {
         for (const existingUserId of existingMembers) {
           assignmentRows.push({
-            period_id:    activePeriod.id,
-            rater_id:     newUserId,
-            ratee_id:     existingUserId,
+            period_id: activePeriod.id,
+            rater_id: newUserId,
+            ratee_id: existingUserId,
             relationship: relType,
           });
           assignmentRows.push({
-            period_id:    activePeriod.id,
-            rater_id:     existingUserId,
-            ratee_id:     newUserId,
+            period_id: activePeriod.id,
+            rater_id: existingUserId,
+            ratee_id: newUserId,
             relationship: relType,
           });
         }
@@ -313,7 +313,7 @@ router.post("/", upload.single("file"), async (req, res) => {
       const { error: aErr } = await supabase
         .from("ratee_rater_assignments")
         .upsert(assignmentRows, {
-          onConflict:       "period_id,rater_id,ratee_id,relationship",
+          onConflict: "period_id,rater_id,ratee_id,relationship",
           ignoreDuplicates: true,
         });
 
@@ -327,11 +327,11 @@ router.post("/", upload.single("file"), async (req, res) => {
 
   return res.status(200).json({
     message: `Bulk upload complete. ${added.length} added, ${skipped.length} skipped, ${assignmentsInserted} assignments created.`,
-    added:               added.length,
+    added: added.length,
     skipped,
     email_failures,
     assignments_created: assignmentsInserted,
-    no_active_period:    !activePeriod,
+    no_active_period: !activePeriod,
   });
 });
 
